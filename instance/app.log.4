@@ -1,0 +1,237 @@
+2025-12-23 18:04:48,811 - app - INFO - Scheduler using region: 'us'
+2025-12-23 18:04:48,811 - app - INFO - Scheduler using region: 'us'
+2025-12-23 18:04:48,841 - app - INFO - Processing row 5: sending email to wazyja1509@chapsmail.com
+2025-12-23 18:04:48,841 - app - INFO - Processing row 5: sending email to wazyja1509@chapsmail.com
+2025-12-23 18:04:50,056 - app - ERROR - Failed to refresh token for scheduler: AADSTS70000: User account is found to be in service abuse mode. Trace ID: 98d19083-7368-4e15-94d1-59c485d91f00 Correlation ID: 8c02b83d-3d75-4f26-87a8-4b1fcc023ed6 Timestamp: 2025-12-23 12:34:44Z
+2025-12-23 18:04:50,056 - app - ERROR - Failed to refresh token for scheduler: AADSTS70000: User account is found to be in service abuse mode. Trace ID: 98d19083-7368-4e15-94d1-59c485d91f00 Correlation ID: 8c02b83d-3d75-4f26-87a8-4b1fcc023ed6 Timestamp: 2025-12-23 12:34:44Z
+2025-12-23 18:04:50,782 - app - ERROR - Graph API error sending to wazyja1509@chapsmail.com: IDX14100: JWT is not well formed, there are no dots (.).
+The token needs to be in JWS or JWE Compact Serialization Format. (JWS): 'EncodedHeader.EncodedPayload.EncodedSignature'. (JWE): 'EncodedProtectedHeader.EncodedEncryptedKey.EncodedInitializationVector.EncodedCiphertext.EncodedAuthenticationTag'.
+2025-12-23 18:04:50,782 - app - ERROR - Graph API error sending to wazyja1509@chapsmail.com: IDX14100: JWT is not well formed, there are no dots (.).
+The token needs to be in JWS or JWE Compact Serialization Format. (JWS): 'EncodedHeader.EncodedPayload.EncodedSignature'. (JWE): 'EncodedProtectedHeader.EncodedEncryptedKey.EncodedInitializationVector.EncodedCiphertext.EncodedAuthenticationTag'.
+2025-12-23 18:04:50,790 - apscheduler.executors.default - ERROR - Job "send_email_job (trigger: interval[0:00:30], next run at: 2025-12-23 18:05:18 IST)" raised an exception
+Traceback (most recent call last):
+  File "C:\MyMerger\scheduler.py", line 275, in send_email_job
+    update_db_status(status_text, error_details=error_msg)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MyMerger\scheduler.py", line 256, in update_db_status
+    contact_status.last_update = datetime.now(timezone.utc)
+                                 ^^^^^^^^
+UnboundLocalError: cannot access local variable 'datetime' where it is not associated with a value
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\DELL\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\apscheduler\executors\base.py", line 131, in run_job
+    retval = job.func(*job.args, **job.kwargs)
+  File "C:\MyMerger\scheduler.py", line 284, in send_email_job
+    update_db_status(status_text, error_details=error_details)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MyMerger\scheduler.py", line 256, in update_db_status
+    contact_status.last_update = datetime.now(timezone.utc)
+                                 ^^^^^^^^
+UnboundLocalError: cannot access local variable 'datetime' where it is not associated with a value
+2025-12-23 18:04:50,790 - apscheduler.executors.default - ERROR - Job "send_email_job (trigger: interval[0:00:30], next run at: 2025-12-23 18:05:18 IST)" raised an exception
+Traceback (most recent call last):
+  File "C:\MyMerger\scheduler.py", line 275, in send_email_job
+    update_db_status(status_text, error_details=error_msg)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MyMerger\scheduler.py", line 256, in update_db_status
+    contact_status.last_update = datetime.now(timezone.utc)
+                                 ^^^^^^^^
+UnboundLocalError: cannot access local variable 'datetime' where it is not associated with a value
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\DELL\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\apscheduler\executors\base.py", line 131, in run_job
+    retval = job.func(*job.args, **job.kwargs)
+  File "C:\MyMerger\scheduler.py", line 284, in send_email_job
+    update_db_status(status_text, error_details=error_details)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MyMerger\scheduler.py", line 256, in update_db_status
+    contact_status.last_update = datetime.now(timezone.utc)
+                                 ^^^^^^^^
+UnboundLocalError: cannot access local variable 'datetime' where it is not associated with a value
+2025-12-23 18:05:18,809 - app - INFO - --- Starting throttled email job (1 email per run) ---
+2025-12-23 18:05:18,809 - app - INFO - --- Starting throttled email job (1 email per run) ---
+2025-12-23 18:05:18,814 - app - INFO - BCC is enabled for this scheduler run.
+2025-12-23 18:05:18,814 - app - INFO - BCC is enabled for this scheduler run.
+2025-12-23 18:05:18,817 - app - INFO - Scheduler using region: 'us'
+2025-12-23 18:05:18,817 - app - INFO - Scheduler using region: 'us'
+2025-12-23 18:05:18,845 - app - INFO - Processing row 5: sending email to wazyja1509@chapsmail.com
+2025-12-23 18:05:18,845 - app - INFO - Processing row 5: sending email to wazyja1509@chapsmail.com
+2025-12-23 18:05:20,087 - app - ERROR - Failed to refresh token for scheduler: AADSTS70000: User account is found to be in service abuse mode. Trace ID: 64659122-bc68-4a23-ac5d-96c90cf18001 Correlation ID: 6607e7b3-7500-499d-b3e4-518c51438ced Timestamp: 2025-12-23 12:35:14Z
+2025-12-23 18:05:20,087 - app - ERROR - Failed to refresh token for scheduler: AADSTS70000: User account is found to be in service abuse mode. Trace ID: 64659122-bc68-4a23-ac5d-96c90cf18001 Correlation ID: 6607e7b3-7500-499d-b3e4-518c51438ced Timestamp: 2025-12-23 12:35:14Z
+2025-12-23 18:05:20,728 - app - ERROR - Graph API error sending to wazyja1509@chapsmail.com: IDX14100: JWT is not well formed, there are no dots (.).
+The token needs to be in JWS or JWE Compact Serialization Format. (JWS): 'EncodedHeader.EncodedPayload.EncodedSignature'. (JWE): 'EncodedProtectedHeader.EncodedEncryptedKey.EncodedInitializationVector.EncodedCiphertext.EncodedAuthenticationTag'.
+2025-12-23 18:05:20,728 - app - ERROR - Graph API error sending to wazyja1509@chapsmail.com: IDX14100: JWT is not well formed, there are no dots (.).
+The token needs to be in JWS or JWE Compact Serialization Format. (JWS): 'EncodedHeader.EncodedPayload.EncodedSignature'. (JWE): 'EncodedProtectedHeader.EncodedEncryptedKey.EncodedInitializationVector.EncodedCiphertext.EncodedAuthenticationTag'.
+2025-12-23 18:05:20,744 - apscheduler.executors.default - ERROR - Job "send_email_job (trigger: interval[0:00:30], next run at: 2025-12-23 18:05:48 IST)" raised an exception
+Traceback (most recent call last):
+  File "C:\MyMerger\scheduler.py", line 275, in send_email_job
+    update_db_status(status_text, error_details=error_msg)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MyMerger\scheduler.py", line 256, in update_db_status
+    contact_status.last_update = datetime.now(timezone.utc)
+                                 ^^^^^^^^
+UnboundLocalError: cannot access local variable 'datetime' where it is not associated with a value
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\DELL\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\apscheduler\executors\base.py", line 131, in run_job
+    retval = job.func(*job.args, **job.kwargs)
+  File "C:\MyMerger\scheduler.py", line 284, in send_email_job
+    update_db_status(status_text, error_details=error_details)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MyMerger\scheduler.py", line 256, in update_db_status
+    contact_status.last_update = datetime.now(timezone.utc)
+                                 ^^^^^^^^
+UnboundLocalError: cannot access local variable 'datetime' where it is not associated with a value
+2025-12-23 18:05:20,744 - apscheduler.executors.default - ERROR - Job "send_email_job (trigger: interval[0:00:30], next run at: 2025-12-23 18:05:48 IST)" raised an exception
+Traceback (most recent call last):
+  File "C:\MyMerger\scheduler.py", line 275, in send_email_job
+    update_db_status(status_text, error_details=error_msg)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MyMerger\scheduler.py", line 256, in update_db_status
+    contact_status.last_update = datetime.now(timezone.utc)
+                                 ^^^^^^^^
+UnboundLocalError: cannot access local variable 'datetime' where it is not associated with a value
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\DELL\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\apscheduler\executors\base.py", line 131, in run_job
+    retval = job.func(*job.args, **job.kwargs)
+  File "C:\MyMerger\scheduler.py", line 284, in send_email_job
+    update_db_status(status_text, error_details=error_details)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MyMerger\scheduler.py", line 256, in update_db_status
+    contact_status.last_update = datetime.now(timezone.utc)
+                                 ^^^^^^^^
+UnboundLocalError: cannot access local variable 'datetime' where it is not associated with a value
+2025-12-23 18:05:48,807 - app - INFO - --- Starting throttled email job (1 email per run) ---
+2025-12-23 18:05:48,807 - app - INFO - --- Starting throttled email job (1 email per run) ---
+2025-12-23 18:05:48,809 - app - INFO - BCC is enabled for this scheduler run.
+2025-12-23 18:05:48,809 - app - INFO - BCC is enabled for this scheduler run.
+2025-12-23 18:05:48,811 - app - INFO - Scheduler using region: 'us'
+2025-12-23 18:05:48,811 - app - INFO - Scheduler using region: 'us'
+2025-12-23 18:05:48,832 - app - INFO - Processing row 5: sending email to wazyja1509@chapsmail.com
+2025-12-23 18:05:48,832 - app - INFO - Processing row 5: sending email to wazyja1509@chapsmail.com
+2025-12-23 18:05:50,015 - app - ERROR - Failed to refresh token for scheduler: AADSTS70000: User account is found to be in service abuse mode. Trace ID: 90f904a7-785a-4e1f-961a-8476da897000 Correlation ID: f86e78e4-e635-46e5-a07e-6e3ebcfa820f Timestamp: 2025-12-23 12:35:44Z
+2025-12-23 18:05:50,015 - app - ERROR - Failed to refresh token for scheduler: AADSTS70000: User account is found to be in service abuse mode. Trace ID: 90f904a7-785a-4e1f-961a-8476da897000 Correlation ID: f86e78e4-e635-46e5-a07e-6e3ebcfa820f Timestamp: 2025-12-23 12:35:44Z
+2025-12-23 18:05:50,951 - app - ERROR - Graph API error sending to wazyja1509@chapsmail.com: IDX14100: JWT is not well formed, there are no dots (.).
+The token needs to be in JWS or JWE Compact Serialization Format. (JWS): 'EncodedHeader.EncodedPayload.EncodedSignature'. (JWE): 'EncodedProtectedHeader.EncodedEncryptedKey.EncodedInitializationVector.EncodedCiphertext.EncodedAuthenticationTag'.
+2025-12-23 18:05:50,951 - app - ERROR - Graph API error sending to wazyja1509@chapsmail.com: IDX14100: JWT is not well formed, there are no dots (.).
+The token needs to be in JWS or JWE Compact Serialization Format. (JWS): 'EncodedHeader.EncodedPayload.EncodedSignature'. (JWE): 'EncodedProtectedHeader.EncodedEncryptedKey.EncodedInitializationVector.EncodedCiphertext.EncodedAuthenticationTag'.
+2025-12-23 18:05:50,964 - apscheduler.executors.default - ERROR - Job "send_email_job (trigger: interval[0:00:30], next run at: 2025-12-23 18:06:18 IST)" raised an exception
+Traceback (most recent call last):
+  File "C:\MyMerger\scheduler.py", line 275, in send_email_job
+    update_db_status(status_text, error_details=error_msg)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MyMerger\scheduler.py", line 256, in update_db_status
+    contact_status.last_update = datetime.now(timezone.utc)
+                                 ^^^^^^^^
+UnboundLocalError: cannot access local variable 'datetime' where it is not associated with a value
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\DELL\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\apscheduler\executors\base.py", line 131, in run_job
+    retval = job.func(*job.args, **job.kwargs)
+  File "C:\MyMerger\scheduler.py", line 284, in send_email_job
+    update_db_status(status_text, error_details=error_details)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MyMerger\scheduler.py", line 256, in update_db_status
+    contact_status.last_update = datetime.now(timezone.utc)
+                                 ^^^^^^^^
+UnboundLocalError: cannot access local variable 'datetime' where it is not associated with a value
+2025-12-23 18:05:50,964 - apscheduler.executors.default - ERROR - Job "send_email_job (trigger: interval[0:00:30], next run at: 2025-12-23 18:06:18 IST)" raised an exception
+Traceback (most recent call last):
+  File "C:\MyMerger\scheduler.py", line 275, in send_email_job
+    update_db_status(status_text, error_details=error_msg)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MyMerger\scheduler.py", line 256, in update_db_status
+    contact_status.last_update = datetime.now(timezone.utc)
+                                 ^^^^^^^^
+UnboundLocalError: cannot access local variable 'datetime' where it is not associated with a value
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\DELL\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\apscheduler\executors\base.py", line 131, in run_job
+    retval = job.func(*job.args, **job.kwargs)
+  File "C:\MyMerger\scheduler.py", line 284, in send_email_job
+    update_db_status(status_text, error_details=error_details)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MyMerger\scheduler.py", line 256, in update_db_status
+    contact_status.last_update = datetime.now(timezone.utc)
+                                 ^^^^^^^^
+UnboundLocalError: cannot access local variable 'datetime' where it is not associated with a value
+2025-12-23 18:06:18,821 - app - INFO - --- Starting throttled email job (1 email per run) ---
+2025-12-23 18:06:18,821 - app - INFO - --- Starting throttled email job (1 email per run) ---
+2025-12-23 18:06:18,823 - app - INFO - BCC is enabled for this scheduler run.
+2025-12-23 18:06:18,823 - app - INFO - BCC is enabled for this scheduler run.
+2025-12-23 18:06:18,826 - app - INFO - Scheduler using region: 'us'
+2025-12-23 18:06:18,826 - app - INFO - Scheduler using region: 'us'
+2025-12-23 18:06:18,844 - app - INFO - Processing row 5: sending email to wazyja1509@chapsmail.com
+2025-12-23 18:06:18,844 - app - INFO - Processing row 5: sending email to wazyja1509@chapsmail.com
+2025-12-23 18:06:20,071 - app - ERROR - Failed to refresh token for scheduler: AADSTS70000: User account is found to be in service abuse mode. Trace ID: fce6c3e6-c59b-47b3-ba19-80759a622100 Correlation ID: c5f307fb-52d0-4afd-8036-f5f712f1fe24 Timestamp: 2025-12-23 12:36:14Z
+2025-12-23 18:06:20,071 - app - ERROR - Failed to refresh token for scheduler: AADSTS70000: User account is found to be in service abuse mode. Trace ID: fce6c3e6-c59b-47b3-ba19-80759a622100 Correlation ID: c5f307fb-52d0-4afd-8036-f5f712f1fe24 Timestamp: 2025-12-23 12:36:14Z
+2025-12-23 18:06:20,742 - app - ERROR - Graph API error sending to wazyja1509@chapsmail.com: IDX14100: JWT is not well formed, there are no dots (.).
+The token needs to be in JWS or JWE Compact Serialization Format. (JWS): 'EncodedHeader.EncodedPayload.EncodedSignature'. (JWE): 'EncodedProtectedHeader.EncodedEncryptedKey.EncodedInitializationVector.EncodedCiphertext.EncodedAuthenticationTag'.
+2025-12-23 18:06:20,742 - app - ERROR - Graph API error sending to wazyja1509@chapsmail.com: IDX14100: JWT is not well formed, there are no dots (.).
+The token needs to be in JWS or JWE Compact Serialization Format. (JWS): 'EncodedHeader.EncodedPayload.EncodedSignature'. (JWE): 'EncodedProtectedHeader.EncodedEncryptedKey.EncodedInitializationVector.EncodedCiphertext.EncodedAuthenticationTag'.
+2025-12-23 18:06:20,756 - apscheduler.executors.default - ERROR - Job "send_email_job (trigger: interval[0:00:30], next run at: 2025-12-23 18:06:48 IST)" raised an exception
+Traceback (most recent call last):
+  File "C:\MyMerger\scheduler.py", line 275, in send_email_job
+    update_db_status(status_text, error_details=error_msg)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MyMerger\scheduler.py", line 256, in update_db_status
+    contact_status.last_update = datetime.now(timezone.utc)
+                                 ^^^^^^^^
+UnboundLocalError: cannot access local variable 'datetime' where it is not associated with a value
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\DELL\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\apscheduler\executors\base.py", line 131, in run_job
+    retval = job.func(*job.args, **job.kwargs)
+  File "C:\MyMerger\scheduler.py", line 284, in send_email_job
+    update_db_status(status_text, error_details=error_details)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MyMerger\scheduler.py", line 256, in update_db_status
+    contact_status.last_update = datetime.now(timezone.utc)
+                                 ^^^^^^^^
+UnboundLocalError: cannot access local variable 'datetime' where it is not associated with a value
+2025-12-23 18:06:20,756 - apscheduler.executors.default - ERROR - Job "send_email_job (trigger: interval[0:00:30], next run at: 2025-12-23 18:06:48 IST)" raised an exception
+Traceback (most recent call last):
+  File "C:\MyMerger\scheduler.py", line 275, in send_email_job
+    update_db_status(status_text, error_details=error_msg)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MyMerger\scheduler.py", line 256, in update_db_status
+    contact_status.last_update = datetime.now(timezone.utc)
+                                 ^^^^^^^^
+UnboundLocalError: cannot access local variable 'datetime' where it is not associated with a value
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\DELL\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\apscheduler\executors\base.py", line 131, in run_job
+    retval = job.func(*job.args, **job.kwargs)
+  File "C:\MyMerger\scheduler.py", line 284, in send_email_job
+    update_db_status(status_text, error_details=error_details)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MyMerger\scheduler.py", line 256, in update_db_status
+    contact_status.last_update = datetime.now(timezone.utc)
+                                 ^^^^^^^^
+UnboundLocalError: cannot access local variable 'datetime' where it is not associated with a value
+2025-12-23 18:06:48,821 - app - INFO - --- Starting throttled email job (1 email per run) ---
+2025-12-23 18:06:48,821 - app - INFO - --- Starting throttled email job (1 email per run) ---
+2025-12-23 18:06:48,825 - app - INFO - BCC is enabled for this scheduler run.
+2025-12-23 18:06:48,825 - app - INFO - BCC is enabled for this scheduler run.
+2025-12-23 18:06:48,828 - app - INFO - Scheduler using region: 'us'
+2025-12-23 18:06:48,828 - app - INFO - Scheduler using region: 'us'
+2025-12-23 18:06:48,862 - app - INFO - Processing row 5: sending email to wazyja1509@chapsmail.com
+2025-12-23 18:06:48,862 - app - INFO - Processing row 5: sending email to wazyja1509@chapsmail.com
+2025-12-23 18:06:50,164 - app - ERROR - Failed to refresh token for scheduler: AADSTS70000: User account is found to be in service abuse mode. Trace ID: 237ea106-57bc-42b9-8161-ff1ffbc27c00 Correlation ID: 2c005090-1544-421f-a229-ddddc0090390 Timestamp: 2025-12-23 12:36:44Z

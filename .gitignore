@@ -1,5 +1,4 @@
-/env
+.env
 .graph_token.json
-instance/
-__pycache__/
-*.pyc
+node_modules/
+dist/

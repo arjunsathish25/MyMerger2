@@ -1,0 +1,43 @@
+2025-12-23 18:12:53,866 - app - INFO - Processing row 5: sending email to wazyja1509@chapsmail.com
+2025-12-23 18:12:52,845 - app - INFO - --- Follow-up email job finished ---
+2025-12-23 18:12:53,866 - app - INFO - Processing row 5: sending email to wazyja1509@chapsmail.com
+2025-12-23 18:12:59,487 - app - INFO - Initial email detected. Adding attachment to draft message ID AQMkADAwATMwMAExLTliODUtY2RjNS0wMAItMDAKAEYAAANgRBaYCPD5SZKh3N12PA_aBwDkyY9bYsx2SJd6u2Q-VjezAAACAQ8AAADkyY9bYsx2SJd6u2Q-VjezAAAATRTuCQAAAA==.
+2025-12-23 18:12:59,487 - app - INFO - Initial email detected. Adding attachment to draft message ID AQMkADAwATMwMAExLTliODUtY2RjNS0wMAItMDAKAEYAAANgRBaYCPD5SZKh3N12PA_aBwDkyY9bYsx2SJd6u2Q-VjezAAACAQ8AAADkyY9bYsx2SJd6u2Q-VjezAAAATRTuCQAAAA==.
+2025-12-23 18:13:05,078 - app - INFO - Successfully added attachment 'Capability statement-GridsGlobal Steel Detailing LLC_US.pdf' to draft AQMkADAwATMwMAExLTliODUtY2RjNS0wMAItMDAKAEYAAANgRBaYCPD5SZKh3N12PA_aBwDkyY9bYsx2SJd6u2Q-VjezAAACAQ8AAADkyY9bYsx2SJd6u2Q-VjezAAAATRTuCQAAAA==.
+2025-12-23 18:13:05,078 - app - INFO - Successfully added attachment 'Capability statement-GridsGlobal Steel Detailing LLC_US.pdf' to draft AQMkADAwATMwMAExLTliODUtY2RjNS0wMAItMDAKAEYAAANgRBaYCPD5SZKh3N12PA_aBwDkyY9bYsx2SJd6u2Q-VjezAAACAQ8AAADkyY9bYsx2SJd6u2Q-VjezAAAATRTuCQAAAA==.
+2025-12-23 18:13:09,308 - app - INFO - --- Throttled email job run finished ---
+2025-12-23 18:13:09,308 - app - INFO - --- Throttled email job run finished ---
+2025-12-23 18:13:10,927 - app - INFO - User paused 'send_email_job'.
+2025-12-23 18:13:10,927 - app - INFO - User paused 'send_email_job'.
+2025-12-23 18:17:48,809 - app - INFO - --- Starting check for replies job ---
+2025-12-23 18:17:48,809 - app - INFO - --- Starting check for replies job ---
+2025-12-23 18:17:52,209 - app - ERROR - Failed to fetch recent messages: 400 Client Error: Bad Request for url: https://graph.microsoft.com/v1.0/me/mailFolders?$filter=wellKnownName%20eq%20'inbox'
+2025-12-23 18:17:52,209 - app - ERROR - Failed to fetch recent messages: 400 Client Error: Bad Request for url: https://graph.microsoft.com/v1.0/me/mailFolders?$filter=wellKnownName%20eq%20'inbox'
+2025-12-23 18:22:48,824 - app - INFO - --- Starting check for replies job ---
+2025-12-23 18:22:48,824 - app - INFO - --- Starting check for replies job ---
+2025-12-23 18:22:53,543 - app - ERROR - Failed to fetch recent messages: 400 Client Error: Bad Request for url: https://graph.microsoft.com/v1.0/me/mailFolders?$filter=wellKnownName%20eq%20'inbox'
+2025-12-23 18:22:53,543 - app - ERROR - Failed to fetch recent messages: 400 Client Error: Bad Request for url: https://graph.microsoft.com/v1.0/me/mailFolders?$filter=wellKnownName%20eq%20'inbox'
+2025-12-23 18:27:48,822 - app - INFO - --- Starting check for replies job ---
+2025-12-23 18:27:48,822 - app - INFO - --- Starting check for replies job ---
+2025-12-23 18:27:54,212 - app - ERROR - Failed to fetch recent messages: 400 Client Error: Bad Request for url: https://graph.microsoft.com/v1.0/me/mailFolders?$filter=wellKnownName%20eq%20'inbox'
+2025-12-23 18:27:54,212 - app - ERROR - Failed to fetch recent messages: 400 Client Error: Bad Request for url: https://graph.microsoft.com/v1.0/me/mailFolders?$filter=wellKnownName%20eq%20'inbox'
+2025-12-23 18:32:48,821 - app - INFO - --- Starting check for replies job ---
+2025-12-23 18:32:48,821 - app - INFO - --- Starting check for replies job ---
+2025-12-23 18:32:51,505 - app - ERROR - Failed to fetch recent messages: 400 Client Error: Bad Request for url: https://graph.microsoft.com/v1.0/me/mailFolders?$filter=wellKnownName%20eq%20'inbox'
+2025-12-23 18:32:51,505 - app - ERROR - Failed to fetch recent messages: 400 Client Error: Bad Request for url: https://graph.microsoft.com/v1.0/me/mailFolders?$filter=wellKnownName%20eq%20'inbox'
+2025-12-23 18:37:49,915 - apscheduler.executors.default - WARNING - Run time of job "check_replies_job (trigger: interval[0:05:00], next run at: 2025-12-23 18:42:48 IST)" was missed by 0:00:01.109320
+2025-12-23 18:37:49,915 - apscheduler.executors.default - WARNING - Run time of job "check_replies_job (trigger: interval[0:05:00], next run at: 2025-12-23 18:42:48 IST)" was missed by 0:00:01.109320
+2025-12-23 18:42:48,820 - app - INFO - --- Starting check for replies job ---
+2025-12-23 18:42:48,820 - app - INFO - --- Starting check for replies job ---
+2025-12-23 18:46:44,377 - app - ERROR - Failed to fetch recent messages: HTTPSConnectionPool(host='graph.microsoft.com', port=443): Read timed out. (read timeout=None)
+2025-12-23 18:46:44,377 - app - ERROR - Failed to fetch recent messages: HTTPSConnectionPool(host='graph.microsoft.com', port=443): Read timed out. (read timeout=None)
+2025-12-23 18:50:07,348 - apscheduler.executors.default - WARNING - Run time of job "check_replies_job (trigger: interval[0:05:00], next run at: 2025-12-23 18:52:48 IST)" was missed by 0:02:18.542097
+2025-12-23 18:50:07,348 - apscheduler.executors.default - WARNING - Run time of job "check_replies_job (trigger: interval[0:05:00], next run at: 2025-12-23 18:52:48 IST)" was missed by 0:02:18.542097
+2025-12-30 19:06:32,063 - app - INFO - Scheduler 'send_email_job' configured to run every 30 seconds.
+2025-12-30 19:06:32,079 - app - INFO - Scheduler 'send_follow_up_job' configured to run every 60 minutes.
+2025-12-30 19:06:32,081 - app - INFO - Scheduler 'send_scheduled_follow_up_job' configured to run every 30 seconds (initially paused).
+2025-12-30 19:06:32,086 - app - INFO - Scheduler started in a paused state. It will not send emails until resumed.
+2025-12-30 21:18:34,412 - app - INFO - Scheduler 'send_email_job' configured to run every 30 seconds.
+2025-12-30 21:18:34,448 - app - INFO - Scheduler 'send_follow_up_job' configured to run every 60 minutes.
+2025-12-30 21:18:34,449 - app - INFO - Scheduler 'send_scheduled_follow_up_job' configured to run every 30 seconds (initially paused).
+2025-12-30 21:18:34,481 - app - INFO - Scheduler started in a paused state. It will not send emails until resumed.

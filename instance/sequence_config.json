@@ -1,0 +1,16 @@
+{
+  "sequence": [
+    {
+      "step": 1,
+      "delay_days": 3,
+      "subject": "Re: Introduction to GridsGlobal Steel Detailing",
+      "template": "follow_up_1.html"
+    },
+    {
+      "step": 2,
+      "delay_days": 5,
+      "subject": "Following Up: GridsGlobal Steel Detailing Partnership",
+      "template": "follow_up_2.html"
+    }
+  ]
+}
