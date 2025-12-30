@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Follow-up Campaign - Mail Merger{% endblock %}
+{% block content %}
+
+<div style="max-width: 900px; margin: 2rem auto; padding: 0 1rem;">
+    <div style="text-align: center; margin-bottom: 2rem;">
+        <h1>Follow-up Campaign</h1>
+        <p class="text-muted">Upload a list of contacts to send a manual follow-up email. This campaign runs separately from the main dashboard.</p>
+        <a href="{{ url_for('follow_up_template') }}" class="btn-secondary"><i data-feather="edit"></i> Edit Follow-up Template</a>
+    </div>
+
+    <section class="upload-section" style="max-width: 600px; margin: 2rem auto;">
+      <form method="POST" enctype="multipart/form-data" action="{{ url_for('follow_up_dashboard') }}" id="upload-form">
+        <label class="custom-file-upload">
+          <input type="file" name="file" id="file-input" accept=".csv,.xlsx" required />
+          <i data-feather="file-plus"></i>
+          <span>Choose File</span>
+        </label>
+        <span id="file-name">No file chosen</span>
+        <button type="submit" class="btn-primary">
+          <i data-feather="upload"></i> Upload
+        </button>
+      </form>
+    </section>
+
+    <section class="send-email-section">
+      <div class="campaign-controls">
+        {% if scheduler_status.state == 'running' %}
+          <div class="control-form-group" style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+            <form method="POST" action="{{ url_for('stop_follow_up_campaign') }}" class="control-form">
+              <button type="submit" class="btn-warning" aria-label="Pause Follow-up Campaign">
+                <i data-feather="pause-circle"></i> Pause Follow-ups
+              </button>
+            </form>
+          </div>
+          <p class="status-text">Follow-up campaign is running. Next email at: {{ scheduler_status.next_run }}</p>
+        {% elif scheduler_status.state == 'paused' %}
+          <form method="POST" action="{{ url_for('start_follow_up_campaign') }}" class="control-form">
+            <button type="submit" class="btn-success" aria-label="Start Follow-up Campaign">
+              <i data-feather="play-circle"></i> Start Sending Follow-ups
+            </button>
+          </form>
+          <p class="status-text">Follow-up campaign is paused. Click Start to begin sending.</p>
+        {% else %}
+          <p class="status-text-error">Scheduler job not found. Please check application logs.</p>
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="preview-section">
+      <h2>Contact Preview</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th><th>Email ID</th><th>Company Name</th>
+          </tr>
+        </thead>
+        <tbody id="preview-tbody">
+          {% for contact in preview_data %}
+          <tr>
+            <td>{{ contact.name or 'N/A' }}</td>
+            <td>{{ contact.email_id or 'N/A' }}</td>
+            <td>{{ contact.company_name or 'N/A' }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3">No follow-up file uploaded yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('file-input');
+    const fileName = document.getElementById('file-name');
+    if (fileInput && fileName) {
+      fileInput.addEventListener('change', () => {
+        fileName.textContent = fileInput.files.length ? fileInput.files[0].name : "No file chosen";
+      });
+    }
+
+    // Add spinner to form submission buttons
+    document.querySelectorAll('.control-form').forEach(form => {
+        form.addEventListener('submit', function() {
+            const button = form.querySelector('button[type="submit"]');
+            if (button) {
+                button.disabled = true;
+                let originalContent = button.innerHTML;
+                button.innerHTML = '<span class="spinner"></span> Processing...';
+                // The form submission will navigate away, so no need to restore the button state
+            }
+        });
+    });
+  });
+</script>
+
+{% endblock %}

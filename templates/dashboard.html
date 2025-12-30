@@ -1,0 +1,1007 @@
+{% extends "base.html" %}
+{% from "_macros.html" import mono_mail_card, bulk_send_progress_bar, mono_mail_ajax_script with context %}
+{% block title %}Dashboard - Mail Merger{% endblock %}
+{% block content %}
+
+{% if just_logged_in %}
+<div class="welcome-overlay">
+    <section class="welcome-banner">
+        <h2>Welcome, {{ username }}!</h2>
+        <p>You're all set. Upload a contact file to begin.</p>
+        <button id="close-welcome-banner" class="btn-primary" style="margin-top: 1rem; padding: 10px 24px; font-size: 1rem;">Get Started</button>
+    </section>
+</div>
+{% endif %}
+
+{% if campaign_progress.total > 0 and scheduler_status.state == 'running' %}
+<div class="progress-overlay">
+    <section class="dashboard-section progress-card">
+        <div class="progress-card-header">
+            <h3><i data-feather="target"></i> Campaign In Progress</h3>
+            <span class="progress-count">{{ campaign_progress.processed }} / {{ campaign_progress.total }} Processed</span>
+        </div>
+        <div class="progress-bar-wrapper">
+            <div class="progress-bar-track">
+                <div class="progress-bar-fill" style="width: {{ campaign_progress.percent }}%;">
+                    <span class="progress-bar-text">{{ '%.0f'|format(campaign_progress.percent) }}%</span>
+                </div>
+            </div>
+        </div>
+        <p class="status-text" style="text-align: center; margin-top: 1.5rem;">Next email is scheduled for: {{ scheduler_status.next_run }}</p>
+        <button id="close-progress-popup" class="btn-primary" style="width: 100%; margin-top: 1rem;">Continue to Dashboard</button>
+    </section>
+</div>
+{% endif %}
+
+<section class="status-card" style="max-width: 1200px; margin: 2rem auto;">
+  <div class="side-by-side-container">
+    <div class="upload-section-styled spotlight-card">
+      <h2>Main Campaign</h2>
+      <p>Upload a contact list to start a scheduled email campaign or send one-off emails.</p>
+      
+      <div class="upload-controls" style="display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; flex-wrap: wrap; margin-top: 1.5rem;">
+        <form method="POST" enctype="multipart/form-data" action="{{ url_for('dashboard') }}" id="upload-form" style="display: flex; align-items: center; gap: 1rem;">
+          <label class="custom-file-upload">
+            <input type="file" name="file" id="file-input" accept=".csv,.xlsx" required />
+            <i data-feather="file-plus"></i>
+            <span>Choose File</span>
+          </label>
+          <span id="file-name">No file chosen</span>
+          <button type="submit" class="btn-primary" id="upload-btn">
+            <i data-feather="upload"></i> Upload
+          </button>
+        </form>
+      </div>
+
+      <div class="top-right-controls" style="display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-light);">
+                <div class="bcc-toggle-container" style="display: flex; align-items: center; gap: 0.75rem;">
+                    <label for="bcc-toggle" class="bcc-toggle-label" style="font-weight: 600; color: var(--text-muted); white-space: nowrap;">BCC to {{ bcc_email }}</label>
+                    <div class="bcc-toggle-wrap">
+                        <input class="bcc-toggle-input" type="checkbox" id="bcc-toggle" />
+                        <label for="bcc-toggle" class="bcc-toggle"></label>
+                    </div>
+                </div>
+
+        <form method="POST" action="{{ url_for('set_campaign_region') }}" id="region-form" class="region-selector">
+            <input type="radio" id="region-us" name="region" value="us" {% if campaign_region == 'us' %}checked{% endif %} onchange="this.form.submit()">
+            <label for="region-us" class="btn-region">US Template</label>
+
+            <input type="radio" id="region-ca" name="region" value="ca" {% if campaign_region == 'ca' %}checked{% endif %} onchange="this.form.submit()">
+            <label for="region-ca" class="btn-region">Canada Template</label>
+        </form>
+      </div>
+
+      <div id="progress-container" style="display: none; margin-top: 1rem;">
+        <div class="modern-loader">
+            <svg class="progress-ring" width="120" height="120">
+               <circle class="progress-ring__circle-bg" stroke-width="8" fill="transparent" r="52" cx="60" cy="60"/>
+               <circle class="progress-ring__circle" stroke-width="8" fill="transparent" r="52" cx="60" cy="60"/>
+            </svg>
+            <span class="progress-ring__text">0%</span>
+        </div>
+        <span id="progress-status" style="text-align: center; display: block; margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-muted);"></span>
+      </div>
+    </div>
+    {{ mono_mail_card(url_for('send_mono_mail'), 'Send Mail', 'Mono Mail', 'Send a one-off email using the current template.') }}
+  </div>
+</section>
+
+<section class="preview-section nested-preview dashboard-section spotlight-card" style="max-width: 1200px;">
+  <div class="preview-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+    <h2>Contacts Preview ({{ preview_data.all_contacts|length if preview_data.all_contacts else 0 }})</h2>
+    <div class="table-actions" style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+        <div id="bulk-actions-container" style="display: none; align-items: center; gap: 1rem; background-color: var(--bg-gray); padding: 0.5rem 1rem; border-radius: 25px;">
+            <span id="selection-count" style="font-weight: 600; font-size: 0.9rem;"></span>
+            <button id="bulk-delete-btn" class="btn-danger" style="padding: 8px 16px; font-size: 0.9rem; border-radius: 20px;"><i data-feather="trash"></i> Delete Selected</button>
+        </div>
+      <button id="add-row-btn" class="btn-secondary" style="display: flex; align-items: center; gap: 0.5rem;">
+          <i data-feather="plus"></i> Add Row
+      </button>
+      <button id="add-column-btn" class="btn-secondary" style="display: flex; align-items: center; gap: 0.5rem;">
+          <i data-feather="plus-square"></i> Add Column
+      </button>
+      <button type="button" class="btn-danger-outline btn-clear-all open-clear-modal-btn" style="display: flex; align-items: center; gap: 0.5rem;">
+          <i data-feather="trash-2"></i> Remove Dataset
+      </button>
+      <button id="save-changes-btn" class="btn-primary" style="display: none; align-items: center; gap: 0.5rem;">
+          <i data-feather="save"></i> Save Changes
+      </button>
+    </div>
+  </div>
+  {{ bulk_send_progress_bar('send-remaining-progress-container', 'Sending Remaining Emails...', 'send-remaining-done-btn', 'progress-status-text-remaining', 'progress-counter-remaining', 'send-remaining-progress-bar') }}
+  <div class="results-table-container">
+    <table>
+      <thead>
+        <tr>
+          <th class="checkbox-cell"><input type="checkbox" class="select-all-checkbox" title="Select all pending"></th>
+          <th>Index</th>
+          {% if preview_data.all_contacts %}
+              {% set contact_sample = preview_data.all_contacts[0] %}
+              {% for key in contact_sample if key not in ['index', 'status'] %}
+                  <th data-column="{{ key }}">{{ key.replace('_', ' ')|title }}</th>
+              {% endfor %}
+          {% else %}
+              <th>Name</th><th>Email ID</th><th>Company Name</th>
+          {% endif %}
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="pending-contacts-tbody" class="preview-tbody">
+        {% for contact in preview_data.get('all_contacts', []) %}
+        <tr data-index="{{ contact.index }}">
+          <td class="checkbox-cell"><input type="checkbox" class="row-checkbox"></td>
+          <td class="index-cell">{{ contact.index }}</td>
+          {% for key, value in contact.items() if key not in ['index', 'status'] %}
+              <td contenteditable="true" data-column="{{ key }}">{{ value }}</td>
+          {% endfor %}
+          <td>
+              {% set status = contact.status %}
+              {% set status_class = 'pending' %}
+              {% set status_icon = 'clock' %}
+              {% if 'Sent' in status %}
+                  {% set status_class = 'sent' %}
+                  {% set status_icon = 'check-circle' %}
+              {% elif 'Failed' in status %}
+                  {% set status_class = 'failed' %}
+                  {% set status_icon = 'alert-triangle' %}
+              {% elif 'Replied' in status %}
+                  {% set status_class = 'replied' %}
+                  {% set status_icon = 'inbox' %}
+              {% endif %}
+              <span class="status-cell status-{{ status_class }}"><i data-feather="{{ status_icon }}"></i><span>{{ status }}</span></span>
+          </td>
+          <td class="actions-cell">
+              <button class="btn-send-single" title="Send Single Email"><i data-feather="send"></i></button>
+              <button class="btn-delete-contact" title="Delete Contact"><i data-feather="trash-2"></i></button>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6">No contacts to display. Upload a file to get started.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Stop & Reset Campaign Modal -->
+<div id="restart-modal" class="modal-overlay" style="display: none;">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3><i data-feather="alert-triangle"></i> Confirm Campaign Restart</h3>
+      <button type="button" class="modal-close" aria-label="Close modal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p>Are you sure you want to restart the entire campaign?</p>
+      <p class="modal-warning-text">This will reset all scheduled email progress and change their status back to 'Pending'. <strong>This action cannot be undone.</strong></p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-secondary modal-cancel">Cancel</button>
+      <form id="restart-campaign-form" method="POST" action="{{ url_for('restart_campaign') }}" style="margin: 0;">
+        <button type="button" id="confirm-restart-btn" class="btn-danger">Yes, Restart Campaign</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Results Overlay -->
+<div id="results-overlay" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 90%; max-height: 90%;">
+        <div class="modal-header">
+            <h3>Campaign Results</h3>
+            <button type="button" class="modal-close" aria-label="Close results">&times;</button>
+        </div>
+        <div class="modal-body" id="results-content">
+            <!-- Content from _results_partial.html will be loaded here -->
+            Loading...
+        </div>
+    </div>
+</div>
+
+<!-- Clear All Data Modal -->
+<div id="clear-modal" class="modal-overlay" style="display: none;">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3><i data-feather="x-octagon"></i> Confirm Stop Campaign</h3>
+      <button type="button" class="modal-close" aria-label="Close modal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p>Are you sure you want to stop the campaign and remove all its data?</p>
+      <p class="modal-warning-text">This will permanently delete the uploaded file and all associated campaign data, including contacts and progress. <strong>This action cannot be undone.</strong></p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-secondary modal-cancel">Cancel</button>
+      <form id="clear-campaign-form" method="POST" action="{{ url_for('clear_campaign') }}" style="margin: 0;">
+        <button type="button" id="confirm-clear-btn" class="btn-danger">Yes, Stop and Clear All</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Send Single Email Modal -->
+<div id="send-single-email-modal" class="modal-overlay" style="display: none;">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3><i data-feather="send"></i> Confirm Single Email</h3>
+      <button type="button" class="modal-close" aria-label="Close modal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p>Are you sure you want to send a single email to <strong id="single-email-placeholder"></strong>?</p>
+      <p class="modal-warning-text">This action will send the email immediately and start the follow-up sequence.</p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-secondary modal-cancel">Cancel</button>
+      <button type="button" id="confirm-send-single-email-btn" class="btn-primary">Yes, Send Email</button>
+    </div>
+  </div>
+</div>
+
+
+<section class="send-email-section dashboard-section" id="campaign-actions-section">
+  <div class="campaign-controls">
+    {% if scheduler_status.state == 'running' %}
+      <div class="control-form-group" style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+        <form method="POST" action="{{ url_for('stop_campaign') }}" class="control-form"><button type="submit" class="btn-campaign btn-warning" aria-label="Pause Campaign"><i data-feather="pause-circle"></i> Pause Campaign</button></form>
+        <button type="button" id="send-remaining-btn" class="btn-campaign btn-primary"><i data-feather="chevrons-right"></i> Send All Remaining</button>
+      </div>
+      <p class="status-text">Campaign is running. Next email at: {{ scheduler_status.next_run }}</p>
+    {% elif scheduler_status.state == 'paused' %}
+      <div class="control-form-group" style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+        <form method="POST" action="{{ url_for('start_campaign') }}" class="control-form">
+          <button type="submit" class="btn-campaign btn-success" aria-label="Start Campaign">
+            <i data-feather="play-circle"></i> Start Campaign
+          </button>
+        </form>
+        <button type="button" id="open-send-all-modal-btn" class="btn-campaign btn-primary"><i data-feather="zap"></i> Send All Immediately</button>
+      </div>
+      <p class="status-text">Choose how to send your emails. 'Scheduled' sends them one by one. 'Send All' sends them at once.</p>
+    {% else %}
+      <p class="status-text-error">Scheduler job not found. Upload a file to begin.</p>
+    {% endif %}
+  </div>
+</section>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Welcome banner logic
+    const welcomeOverlay = document.querySelector('.welcome-overlay');
+    if (welcomeOverlay) {
+        const closeBtn = document.getElementById('close-welcome-banner');
+        closeBtn.addEventListener('click', () => {
+            // Use a class to trigger fade out animation
+            welcomeOverlay.classList.add('fade-out');
+            setTimeout(() => {
+                welcomeOverlay.remove();
+            }, 500); // Match animation duration
+        });
+    }
+
+    // Progress popup logic
+    const progressOverlay = document.querySelector('.progress-overlay');
+    if (progressOverlay) {
+        const closeBtn = document.getElementById('close-progress-popup');
+        closeBtn.addEventListener('click', () => {
+            // Use a class to trigger fade out animation
+            progressOverlay.classList.add('fade-out');
+            setTimeout(() => {
+                progressOverlay.remove();
+            }, 500); // Match animation duration
+        });
+    }
+
+
+    const fileInput = document.getElementById('file-input');
+    const fileName = document.getElementById('file-name');
+    if (fileInput && fileName) {
+      fileInput.addEventListener('change', () => {
+        fileName.textContent = fileInput.files.length ? fileInput.files[0].name : "No file chosen";
+      });
+    }
+
+    // Campaign Stop/Reset Modal Logic
+    const restartModal = document.getElementById('restart-modal');
+    const openModalBtn = document.getElementById('open-restart-modal-btn');
+
+    if (restartModal && openModalBtn) {
+      const closeModalBtns = restartModal.querySelectorAll('.modal-close, .modal-cancel');
+      const confirmRestartBtn = document.getElementById('confirm-restart-btn');
+      const restartForm = document.getElementById('restart-campaign-form');
+
+      openModalBtn.addEventListener('click', () => {
+        restartModal.style.display = 'flex';
+      });
+
+      closeModalBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          restartModal.style.display = 'none';
+        });
+      });
+
+      confirmRestartBtn.addEventListener('click', () => {
+        confirmRestartBtn.disabled = true;
+        confirmRestartBtn.innerHTML = '<span class="spinner"></span> Stopping...';
+        document.getElementById('restart-campaign-form').submit();
+      });
+    }
+
+    // Clear All Modal Logic
+    const clearModal = document.getElementById('clear-modal');
+    const openClearModalBtns = document.querySelectorAll('.open-clear-modal-btn');
+
+    if (clearModal && openClearModalBtns.length > 0) {
+      const closeClearModalBtns = clearModal.querySelectorAll('.modal-close, .modal-cancel');
+      const confirmClearBtn = document.getElementById('confirm-clear-btn');
+
+      openClearModalBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          clearModal.style.display = 'flex';
+        });
+      });
+
+      closeClearModalBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          clearModal.style.display = 'none';
+        });
+      });
+
+      const clearForm = document.getElementById('clear-campaign-form');
+                if (clearForm && confirmClearBtn) {
+                confirmClearBtn.addEventListener('click', () => {
+                    confirmClearBtn.disabled = true;
+                    confirmClearBtn.classList.add('btn-removing');
+                    confirmClearBtn.innerHTML = '<span class="btn-loader"></span> Removing Dataset';
+                    clearForm.submit();
+                });
+            }
+    }
+
+    // Send All Remaining Modal Logic
+    const sendRemainingBtn = document.getElementById('send-remaining-btn');
+    const progressContainerRemaining = document.getElementById('send-remaining-progress-container');
+
+    if (progressContainerRemaining) { // Check for the progress bar container, which is always present
+        const doneBtn = document.getElementById('send-remaining-done-btn');
+
+        doneBtn.addEventListener('click', () => window.location.reload());
+        
+        const startBulkSend = async (button, endpoint, confirmationMessage) => {
+            if (!confirm(confirmationMessage)) {
+                return;
+            }
+
+            // Disable both buttons to prevent multiple triggers
+            if (sendRemainingBtn) sendRemainingBtn.disabled = true;
+            if (openSendAllModalBtn) openSendAllModalBtn.disabled = true;
+            progressContainerRemaining.style.display = 'block';
+
+            const progressBar = document.getElementById('send-remaining-progress-bar');
+            const progressCounter = document.getElementById('progress-counter-remaining');
+            const progressStatusText = document.getElementById('progress-status-text-remaining');
+
+            const originalTitle = document.title;
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+    
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error || `Server responded with status ${response.status}`);
+                }
+    
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+    
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    
+                    const chunk = decoder.decode(value, { stream: true });
+                    const jsonStrings = chunk.split('\n').filter(s => s.trim() !== '');
+    
+                    for (const jsonString of jsonStrings) {
+                        try {
+                            const data = JSON.parse(jsonString);
+                            if (data.type === 'start') { progressCounter.textContent = `0 / ${data.total}`; } 
+                            else if (data.type === 'progress') {
+                                const percent = (data.current / data.total) * 100;
+                                document.title = `(${Math.round(percent)}%) Sending...`;
+                                progressBar.style.width = `${percent}%`;
+                                progressCounter.textContent = `${data.current} / ${data.total}`;
+                                progressStatusText.textContent = `[${data.status.toUpperCase()}] Processing ${data.email}...` + (data.error ? ` - ${data.error}` : '');
+                            } else if (data.type === 'done') {
+                                progressStatusText.textContent = data.message;
+                                progressBar.style.width = '100%';
+                                document.title = "✅ Done! - " + originalTitle;
+                                progressBar.style.backgroundColor = 'var(--status-success)';
+                                doneBtn.style.display = 'inline-flex';
+                            } else if (data.type === 'error') { throw new Error(data.message); }
+                        } catch (e) { console.error("Error parsing JSON chunk: ", jsonString, e); }
+                    }
+                }
+            } catch (error) {
+                progressStatusText.textContent = 'An error occurred!';
+                progressStatusText.style.color = 'var(--danger-color)';
+                progressBar.style.backgroundColor = 'var(--danger-color)';
+                doneBtn.style.display = 'inline-flex';
+            } finally {
+                // Restore title after a short delay if it hasn't been set to "Done"
+                setTimeout(() => { if (!document.title.startsWith("✅")) document.title = originalTitle; }, 3000);
+            }
+        };
+
+        // Attach logic to "Send All Remaining" button if it exists
+        if (sendRemainingBtn) {
+            sendRemainingBtn.addEventListener('click', () => {
+                startBulkSend(
+                    sendRemainingBtn,
+                    "{{ url_for('send_remaining_now') }}",
+                    'Are you sure you want to stop the scheduled campaign and send emails to all remaining contacts immediately?'
+                );
+            });
+        }
+
+        // Attach logic to "Send All Immediately" button if it exists
+        const openSendAllModalBtn = document.getElementById('open-send-all-modal-btn');
+        if (openSendAllModalBtn) {
+        openSendAllModalBtn.addEventListener('click', () => {
+            startBulkSend(openSendAllModalBtn, "{{ url_for('send_emails_now') }}", 'Are you sure you want to send emails to all pending contacts immediately? This will run in the background.');
+        });
+        }
+    }
+
+    // Collapsible Section Logic
+    document.querySelectorAll('.collapsible-section').forEach(section => {
+        const header = section.querySelector('.collapsible-header');
+        header.addEventListener('click', () => {
+            section.classList.toggle('collapsed');
+        });
+    });
+
+    // --- BCC Toggle Logic ---
+    const bccToggle = document.getElementById('bcc-toggle');
+    if (bccToggle) {
+        // 1. Fetch initial state from server
+        fetch("{{ url_for('api_get_settings') }}")
+            .then(response => response.ok ? response.json() : Promise.reject('Failed to fetch'))
+            .then(data => {
+                // Default to true if the property is missing for any reason
+                bccToggle.checked = data.bcc_enabled !== false;
+            })
+            .catch(error => { console.error('Error fetching BCC settings, defaulting to ON:', error); bccToggle.checked = true; });
+
+        // 2. Add event listener to update server on change
+        bccToggle.addEventListener('change', () => {
+            const isEnabled = bccToggle.checked;
+        fetch('/api/settings/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ bcc_enabled: isEnabled }),
+        })
+        .then(response => {
+            if (!response.ok) {
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.indexOf('application/json') !== -1) {
+                    return response.json().then(err => { throw new Error(err.error || 'Server error') });
+                }
+                throw new Error('Authentication session may have expired. Please refresh and log in.');
+            }
+            return response.json();
+        })
+            .then(data => {
+                if (data.success) {
+                    showFlashMessage(`BCC has been ${isEnabled ? 'enabled' : 'disabled'}.`, 'info');
+                } else { throw new Error(data.error || 'Failed to update setting.'); }
+            })
+            .catch(error => {
+                console.error('Error updating BCC setting:', error);
+                showFlashMessage('Error updating BCC setting: ' + error.message, 'danger');
+                bccToggle.checked = !isEnabled; // Revert toggle on failure
+            });
+        });
+    }
+
+    // The Mono Mail AJAX script is now included via the macro at the end of the file.
+
+    // --- Region Selector Logic ---
+    const regionForm = document.getElementById('region-form');
+    if (regionForm) {
+        // Fetch initial state from server to set the correct radio button
+        fetch("{{ url_for('api_get_settings') }}")
+            .then(response => response.ok ? response.json() : {})
+            .then(data => {
+                const savedRegion = data.campaign_region || 'us';
+                const radioToCheck = document.getElementById(`region-${savedRegion}`);
+                if (radioToCheck) {
+                    radioToCheck.checked = true;
+                }
+            });
+    }
+
+    // --- Contact Table Interactivity (Add, Edit, Delete) ---
+    const addRowBtn = document.getElementById('add-row-btn');
+    const addColumnBtn = document.getElementById('add-column-btn');
+    const previewContainer = document.querySelector('.preview-section');
+    const saveChangesBtn = document.getElementById('save-changes-btn');
+    const bulkActionsContainer = document.getElementById('bulk-actions-container');
+    const selectionCount = document.getElementById('selection-count');
+    const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+    let newContactCounter = 0;
+
+    if (previewContainer) {
+        // ADD NEW ROW (formerly Add Contact)
+        addRowBtn.addEventListener('click', () => {
+            newContactCounter++;
+            const newRow = document.createElement('tr');
+            newRow.dataset.index = `new-${newContactCounter}`;
+             newRow.classList.add('new-contact-row');
+            
+            newRow.innerHTML = `
+                <td class="checkbox-cell"><input type="checkbox" class="row-checkbox"></td>
+                <td class="index-cell">New</td>
+                <td contenteditable="true" data-column="name"></td>
+                <td contenteditable="true" data-column="email_id"></td>
+                <td contenteditable="true" data-column="company_name"></td>
+                ${Array.from(document.querySelectorAll('.preview-section thead th[data-column]'))
+                    .filter(th => !['name', 'email_id', 'company_name'].includes(th.dataset.column))
+                    .map(th => `<td contenteditable="true" data-column="${th.dataset.column}"></td>`)
+                    .join('')}
+                <td class="actions-cell">
+                    <button class="btn-delete-contact" title="Remove new contact">
+                        <i data-feather="trash-2"></i>
+                    </button>
+                </td>
+            `;
+            
+            // Add new row to the 'Pending' table
+            document.querySelector('.preview-tbody').prepend(newRow);
+            feather.replace();
+            saveChangesBtn.style.display = 'inline-flex';
+            newRow.querySelector('td[contenteditable="true"]').focus();
+        });
+
+        // ADD NEW COLUMN
+        addColumnBtn.addEventListener('click', () => {
+            const columnName = prompt("Enter the name for the new column:");
+            if (!columnName || columnName.trim() === "") {
+                return; // User cancelled or entered empty name
+            }
+
+            const normalizedColumnName = columnName.trim().replace(/\s+/g, '_').toLowerCase();
+
+            // Check if column already exists
+            if (document.querySelector(`.preview-section thead th[data-column="${normalizedColumnName}"]`)) {
+                showFlashMessage(`Column "${columnName}" already exists.`, 'warning');
+                return;
+            }
+
+            // Add to headers and rows in BOTH tables
+            document.querySelectorAll('.preview-section table').forEach(table => {
+                const theadRow = table.querySelector('thead tr');
+                const newTh = document.createElement('th');
+                newTh.textContent = columnName;
+                newTh.dataset.column = normalizedColumnName;
+                theadRow.insertBefore(newTh, theadRow.querySelector('th:last-child'));
+
+                table.querySelectorAll('tbody tr[data-index]').forEach(row => {
+                    const newTd = document.createElement('td');
+                    newTd.setAttribute('contenteditable', 'true');
+                    newTd.dataset.column = normalizedColumnName;
+                    row.insertBefore(newTd, row.querySelector('td.actions-cell'));
+                });
+            });
+
+            // Adjust colspan on any "No contacts" rows if they exist
+            const emptyRow = document.querySelector('.preview-tbody td[colspan]');
+            if (emptyRow) {
+                emptyRow.setAttribute('colspan', parseInt(emptyRow.getAttribute('colspan'), 10) + 1);
+            }
+
+            showFlashMessage(`Column "${columnName}" added. Fill in values and save.`, 'info');
+            saveChangesBtn.style.display = 'inline-flex';
+        });
+
+        // SHOW SAVE BUTTON ON EDIT
+        previewContainer.addEventListener('input', (e) => {
+            if (e.target.hasAttribute('contenteditable')) {
+                saveChangesBtn.style.display = 'inline-flex';
+                feather.replace();
+            }
+        });
+
+        // SAVE CHANGES (UPDATE & ADD)
+        saveChangesBtn.addEventListener('click', () => {
+            const allData = [];
+            const rows = previewContainer.querySelectorAll('.preview-tbody tr[data-index]');
+
+            rows.forEach(row => {
+                const indexStr = row.dataset.index;
+                const isNew = indexStr.startsWith('new-');
+
+                const rowData = {
+                    index: isNew ? -(parseInt(indexStr.split('-')[1], 10)) : parseInt(indexStr, 10)
+                };
+                row.querySelectorAll('td[contenteditable="true"]').forEach(cell => {
+                    rowData[cell.dataset.column] = cell.innerText.trim();
+                });
+                allData.push(rowData);
+            });
+            
+            saveChangesBtn.disabled = true;
+            saveChangesBtn.innerHTML = '<span class="spinner"></span> Saving...';
+
+            fetch("{{ url_for('api_update_contacts') }}", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(allData),
+            })
+            .then(response => response.ok ? response.json() : response.json().then(err => { throw new Error(err.error || 'Server error') }))
+            .then(data => {
+                if (data.success) {
+                    if (data.reload) {
+                        // A flash message was set on the backend, it will show after reload.
+                        setTimeout(() => window.location.reload(), 1000);
+                    } else {
+                        // Show a dynamic flash message on the frontend for non-reload saves.
+                        showFlashMessage('Contacts updated successfully!', 'success');
+                        saveChangesBtn.innerHTML = '<i data-feather="check"></i> Saved!';
+                        feather.replace();
+                        setTimeout(() => {
+                            saveChangesBtn.style.display = 'none';
+                            saveChangesBtn.disabled = false;
+                            saveChangesBtn.innerHTML = '<i data-feather="save"></i> Save Changes';
+                            feather.replace();
+                        }, 2000);
+                    }
+                } else {
+                    throw new Error(data.error || 'An unknown error occurred.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showFlashMessage('Error saving changes: ' + error.message, 'danger');
+                saveChangesBtn.disabled = false;
+                saveChangesBtn.innerHTML = '<i data-feather="save"></i> Save Changes';
+                feather.replace();
+            });
+        });
+
+        // DELETE (EXISTING OR NEW)
+        previewContainer.addEventListener('click', (e) => {
+            const deleteButton = e.target.closest('.btn-delete-contact');
+            if (!deleteButton) return;
+
+            const row = deleteButton.closest('tr');
+            const contactIndexStr = row.dataset.index;
+
+            if (contactIndexStr.startsWith('new-')) {
+                row.remove();
+                return;
+            }
+
+            const contactIndex = parseInt(contactIndexStr, 10);
+            const contactName = row.querySelector('td[data-column="name"]').innerText;
+
+            if (confirm(`Are you sure you want to delete the contact "${contactName}"? This action cannot be undone.`)) {
+                row.style.opacity = '0.5';
+                deleteButton.disabled = true;
+
+                fetch("{{ url_for('api_delete_contact') }}", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ index: contactIndex }),
+                })
+                .then(response => response.ok ? response.json() : response.json().then(err => { throw new Error(err.error || 'Server error') }))
+                .then(data => {
+                    if (data.success) {
+                        row.style.transition = 'all 0.3s ease';
+                        row.style.transform = 'translateX(100%)';
+                        row.style.opacity = '0';
+                        setTimeout(() => row.remove(), 300);
+                    } else {
+                        throw new Error(data.error || 'Failed to delete contact.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showFlashMessage('Error deleting contact: ' + error.message, 'danger');
+                    row.style.opacity = '1';
+                    deleteButton.disabled = false;
+                });
+            }
+        });
+
+        // --- Send Single Email Modal & Logic ---
+        const sendSingleEmailModal = document.getElementById('send-single-email-modal');
+        let activeSingleSendButton = null;
+
+        if (sendSingleEmailModal) {
+            const closeBtns = sendSingleEmailModal.querySelectorAll('.modal-close, .modal-cancel');
+            const confirmBtn = document.getElementById('confirm-send-single-email-btn');
+
+            closeBtns.forEach(btn => btn.addEventListener('click', () => {
+                sendSingleEmailModal.style.display = 'none';
+                activeSingleSendButton = null;
+            }));
+
+            confirmBtn.addEventListener('click', () => {
+                if (!activeSingleSendButton) return;
+
+                const row = activeSingleSendButton.closest('tr');
+                const contactIndex = parseInt(row.dataset.index, 10);
+
+                activeSingleSendButton.disabled = true;
+                activeSingleSendButton.innerHTML = '<span class="spinner" style="width: 16px; height: 16px; border-width: 2px;"></span>';
+                sendSingleEmailModal.style.display = 'none';
+
+                fetch("{{ url_for('send_single_email') }}", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ index: contactIndex }),
+                })
+                .then(response => response.ok ? response.json() : response.json().then(err => { throw new Error(err.error || 'Server error') }))
+                .then(data => {
+                    if (data.success) {
+                        showFlashMessage(data.message, 'success');
+                        // Update the dedicated status column
+                        const statusCell = row.querySelector('td:nth-last-child(2)');
+                        statusCell.innerHTML = `
+                            <span class="status-cell status-sent">
+                                <i data-feather="check-circle"></i>
+                                <span>Sent</span>
+                            </span>
+                        `;
+                        activeSingleSendButton.remove(); // Remove just the send button
+                        row.classList.add('row-updated');
+                    } else { throw new Error(data.error); }
+                })
+                .catch(error => showFlashMessage('Error: ' + error.message, 'danger'))
+                .finally(() => {
+                    if (document.body.contains(activeSingleSendButton)) { activeSingleSendButton.disabled = false; activeSingleSendButton.innerHTML = '<i data-feather="send"></i>'; feather.replace(); }
+                    activeSingleSendButton = null;
+                });
+            });
+        }
+
+        // --- Send Single Email (Event Delegation) ---
+        previewContainer.addEventListener('click', (e) => {
+            const sendButton = e.target.closest('.btn-send-single');
+            if (!sendButton) return;
+
+            const row = sendButton.closest('tr');
+            const contactEmail = row.querySelector('td[data-column="email_id"]').innerText;
+
+            activeSingleSendButton = sendButton;
+            document.getElementById('single-email-placeholder').textContent = contactEmail;
+            sendSingleEmailModal.style.display = 'flex';
+            feather.replace();
+        });
+
+        // --- Bulk Selection Logic ---
+        function updateBulkActionsUI() {
+            const allCheckboxes = previewContainer.querySelectorAll('.row-checkbox');
+            const checkedCheckboxes = previewContainer.querySelectorAll('.row-checkbox:checked');
+            const selectedCount = checkedCheckboxes.length;
+
+            if (selectedCount > 0) {
+                bulkActionsContainer.style.display = 'flex';
+                selectionCount.textContent = `${selectedCount} selected`;
+                feather.replace(); // Render the trash icon
+            } else {
+                bulkActionsContainer.style.display = 'none';
+            }
+
+            // Update "select all" checkbox state for each table
+            document.querySelectorAll('.nested-preview').forEach(section => {
+                const selectAll = section.querySelector('.select-all-checkbox');
+                const rows = section.querySelectorAll('.row-checkbox');
+                const checkedRows = section.querySelectorAll('.row-checkbox:checked');
+
+                if (selectAll) { // Ensure the checkbox exists
+                    if (rows.length > 0) {
+                        if (checkedRows.length === rows.length) {
+                            selectAll.checked = true; selectAll.indeterminate = false;
+                        } else if (checkedRows.length > 0) {
+                            selectAll.checked = false; selectAll.indeterminate = true;
+                        } else {
+                            selectAll.checked = false; selectAll.indeterminate = false;
+                        }
+                    }
+                }
+            });
+            // Add/remove class for visual feedback on selected rows
+            allCheckboxes.forEach(checkbox => {
+                checkbox.closest('tr').classList.toggle('row-selected', checkbox.checked);
+            });
+        }
+
+        const allSelectAllCheckboxes = document.querySelectorAll('.select-all-checkbox');
+        allSelectAllCheckboxes.forEach(selectAll => {
+            selectAll.addEventListener('change', (e) => {
+                const isChecked = e.target.checked;
+                const table = e.target.closest('.nested-preview').querySelector('table');
+                table.querySelectorAll('.row-checkbox').forEach(checkbox => {
+                    checkbox.checked = isChecked;
+                });
+                updateBulkActionsUI();
+            });
+        });
+        
+
+        previewContainer.addEventListener('change', (e) => {
+            if (e.target.classList.contains('row-checkbox')) {
+                updateBulkActionsUI();
+            }
+        });
+        // BULK DELETE
+        bulkDeleteBtn.addEventListener('click', () => {
+            const checkedRows = previewContainer.querySelectorAll('.row-checkbox:checked');
+            const indicesToDelete = [];
+            const rowsToDelete = [];
+
+            checkedRows.forEach(checkbox => {
+                const row = checkbox.closest('tr');
+                const indexStr = row.dataset.index;
+                if (!indexStr.startsWith('new-')) {
+                    indicesToDelete.push(parseInt(indexStr, 10));
+                }
+                rowsToDelete.push(row);
+            });
+
+            if (rowsToDelete.length === 0) return;
+
+            if (confirm(`Are you sure you want to delete ${rowsToDelete.length} selected contacts? This action cannot be undone.`)) {
+                // Visually remove new (unsaved) rows immediately
+                rowsToDelete.forEach(row => {
+                    if (row.dataset.index.startsWith('new-')) {
+                        row.remove();
+                    }
+                });
+
+                if (indicesToDelete.length === 0) {
+                    updateBulkActionsUI();
+                    return; // Only new rows were selected and removed
+                }
+
+                fetch("{{ url_for('api_bulk_delete_contacts') }}", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ indices: indicesToDelete }),
+                })
+                .then(response => response.ok ? response.json() : response.json().then(err => { throw new Error(err.error || 'Server error') }))
+                .then(data => {
+                    if (data.success) {
+                        showFlashMessage(`${indicesToDelete.length} contacts deleted successfully.`, 'success');
+                        rowsToDelete.forEach(row => row.remove());
+                        updateBulkActionsUI();
+                    } else {
+                        throw new Error(data.error);
+                    }
+                })
+                .catch(error => showFlashMessage('Error during bulk delete: ' + error.message, 'danger'));
+            }
+        });
+
+        // --- File Upload with Modern Progress Loader ---
+        const uploadForm = document.getElementById('upload-form');
+        const uploadBtn = document.getElementById('upload-btn');
+        const progressContainer = document.getElementById('progress-container');
+        const progressStatus = document.getElementById('progress-status');
+
+        if (uploadForm) {
+            uploadForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const file = document.getElementById('file-input').files[0];
+                if (!file) {
+                    showFlashMessage('Please choose a file to upload.', 'warning');
+                    return;
+                }
+
+                // --- Modern Loader Logic ---
+                const progressRingCircle = progressContainer.querySelector('.progress-ring__circle');
+                const progressRingText = progressContainer.querySelector('.progress-ring__text');
+                if (!progressRingCircle || !progressRingText) return;
+
+                const radius = progressRingCircle.r.baseVal.value;
+                const circumference = radius * 2 * Math.PI;
+
+                progressRingCircle.style.strokeDasharray = `${circumference} ${circumference}`;
+                
+                function setProgress(percent) {
+                    const offset = circumference - percent / 100 * circumference;
+                    progressRingCircle.style.strokeDashoffset = offset;
+                    progressRingText.textContent = `${Math.round(percent)}%`;
+                }
+                // --- End Modern Loader Logic ---
+
+                const formData = new FormData(uploadForm);
+                const xhr = new XMLHttpRequest();
+
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        const percentComplete = (e.loaded / e.total) * 100;
+                        setProgress(percentComplete);
+                    }
+                });
+
+                xhr.addEventListener('load', function() {
+                    progressStatus.textContent = 'Upload complete. Refreshing view...';
+                    setProgress(100); // Ensure it hits 100%
+                    progressRingCircle.style.stroke = 'var(--status-success, #28a745)';
+                    progressRingText.style.color = 'var(--status-success, #28a745)';
+                    sessionStorage.setItem('skipLoader', 'true'); // Set flag to prevent page loader on reload
+                    setTimeout(() => window.location.reload(), 500); // Reload to show new data
+                });
+
+                xhr.addEventListener('error', function() {
+                    progressStatus.textContent = 'Upload Failed!';
+                    progressRingCircle.style.stroke = 'var(--danger-color, #dc3545)';
+                    progressRingText.style.color = 'var(--danger-color, #dc3545)';
+                    showFlashMessage('A network error occurred during the upload. Please check your connection.', 'danger');
+                    uploadBtn.disabled = false;
+                    uploadBtn.innerHTML = '<i data-feather="upload"></i> Upload';
+                    feather.replace();
+                });
+
+                // Reset loader to initial state for new upload
+                uploadBtn.disabled = true;
+                uploadBtn.innerHTML = '<span class="spinner"></span> Uploading...';
+                progressStatus.textContent = `Uploading ${file.name}...`;
+                progressContainer.style.display = 'block';
+                setProgress(0);
+                progressRingCircle.style.stroke = 'var(--primary-orange)';
+                progressRingText.style.color = 'var(--primary-orange)';
+                
+                xhr.open('POST', "{{ url_for('dashboard') }}", true);
+                xhr.send(formData);
+            });
+        }
+    }
+  });
+
+  // Function to load and show the results in the overlay
+  function showResultsOverlay() {
+    const resultsOverlay = document.getElementById('results-overlay');
+    const resultsContent = document.getElementById('results-content');
+    if (!resultsOverlay || !resultsContent) return;
+
+    resultsOverlay.style.display = 'flex';
+
+    fetch("{{ url_for('results') }}", {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => response.text())
+    .then(data => {
+        resultsContent.innerHTML = data;
+        feather.replace();
+    })
+    .catch(error => {
+        resultsContent.innerHTML = `<p class="text-danger">Error loading results: ${error}</p>`;
+    });
+
+    // Close button logic
+    const closeModal = resultsOverlay.querySelector('.modal-close');
+    closeModal.addEventListener('click', () => {
+        resultsOverlay.style.display = 'none';
+    });
+
+    // Handle clicks outside the modal content to close the overlay
+    window.addEventListener('click', function(event) {
+        if (event.target == resultsOverlay) {
+            resultsOverlay.style.display = "none";
+        }
+    });
+}
+
+// Add a button or link to trigger the results overlay
+const resultsLink = document.querySelector('a[href="{{ url_for('results') }}"]');
+</script>
+
+{{ mono_mail_ajax_script('.mono-mail-form', url_for('send_mono_mail')) }}
+
+{% endblock %}

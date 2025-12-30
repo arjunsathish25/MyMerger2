@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% block title %}Edit Email Template - My Merger{% endblock %}
+{% block content %}
+<form method="POST" action="{{ url_for('template') }}">
+  <section class="template-editor-section">
+    <div class="template-editor-main">
+      <div class="template-header">
+        <h2>Main Campaign Template</h2>
+        <p>This template is used for the initial emails sent from the main dashboard.</p>
+      </div>
+      <textarea name="main_template_content" required spellcheck="false">{{ main_template_content }}</textarea>
+      <div class="template-actions">
+        <button type="button" id="load-us-template" class="btn-secondary"><i data-feather="download-cloud"></i> Load US Template</button>
+        <button type="button" id="load-canada-template" class="btn-secondary"><i data-feather="download-cloud"></i> Load Canada Template</button>
+        {% if url_for('preview', _external=True) %}
+          <a href="{{ url_for('preview') }}" class="btn-secondary" target="_blank"><i data-feather="eye"></i> Preview Main Template</a>
+        {% endif %}
+      </div>
+    </div>
+    <div class="template-sidebar">
+      <div class="placeholder-helper">
+        <h4><i data-feather="list"></i> Main Placeholders</h4>
+        <div id="main-placeholder-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="template-editor-section">
+    <div class="template-editor-main">
+      <div class="template-header">
+        <h2>Follow-up Campaign Template</h2>
+        <p>This template is used for all emails sent from the "Follow-up" page.</p>
+      </div>
+      <textarea name="follow_up_template_content" required spellcheck="false">{{ follow_up_template_content }}</textarea>
+      <div class="template-actions">
+        {% if url_for('preview_follow_up', _external=True) %}
+          <a href="{{ url_for('preview_follow_up') }}" class="btn-secondary" target="_blank"><i data-feather="eye"></i> Preview Follow-up Template</a>
+        {% endif %}
+      </div>
+    </div>
+    <div class="template-sidebar">
+      <div class="placeholder-helper">
+        <h4><i data-feather="list"></i> Follow-up Placeholders</h4>
+        <div id="follow-up-placeholder-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="save-all-container">
+    <button type="submit" class="btn-primary btn-save-all"><i data-feather="save"></i> Save All Templates</button>
+  </div>
+</form>
+
+<style>
+  .template-editor-section {
+    display: flex;
+    flex-direction: row;
+    gap: 2rem;
+    align-items: flex-start;
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: var(--bg-light);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+  }
+  body.dark .template-editor-section {
+    background: var(--card-bg-dark);
+    border-color: var(--border-dark);
+  }
+  .template-editor-main { flex: 3; }
+  .template-sidebar { flex: 1; position: sticky; top: 80px; }
+  .template-header { margin-bottom: 1.5rem; }
+  .template-header h2 { margin: 0 0 0.25rem 0; } 
+  .template-header p { margin: 0; color: var(--text-muted); }
+  .template-actions { 
+    margin-top: 1.5rem; 
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .placeholder-helper {
+    background: var(--bg-gray);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+  body.dark .placeholder-helper {
+    background: var(--card-bg-dark);
+    border-color: var(--border-dark);
+  }
+  .placeholder-helper h4 { margin-top: 0; display: flex; align-items: center; gap: 0.5rem; }
+  #main-placeholder-list, #follow-up-placeholder-list { display: flex; flex-direction: column; gap: 0.5rem; }
+  .placeholder-item {
+    background: var(--bg-light);
+    border: 1px solid var(--border-light);
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    font-family: monospace;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 600;
+  }
+  body.dark .placeholder-item {
+    background: var(--bg-dark);
+    border-color: var(--border-dark);
+  }
+  .placeholder-item:hover {
+    background: var(--primary-orange);
+    color: white;
+    border-color: var(--primary-orange);
+    transform: translateX(5px);
+  }
+  .save-all-container {
+    max-width: 1200px;
+    margin: 0 auto 3rem;
+    padding: 0 2rem;
+    text-align: right;
+  }
+  .btn-save-all {
+    padding: 12px 28px;
+    font-size: 1.1rem;
+  }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const mainTemplateTextarea = document.querySelector('textarea[name="main_template_content"]');
+
+    function loadTemplate(country) {
+        fetch(`/api/get_template/${country}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Template for ${country.toUpperCase()} not found.`);
+                }
+                return response.text();
+            })
+            .then(templateContent => {
+                mainTemplateTextarea.value = templateContent;
+                showFlashMessage(`Loaded ${country.toUpperCase()} template.`, 'success');
+            })
+            .catch(error => {
+                console.error('Error loading template:', error);
+                showFlashMessage(error.message, 'error');
+            });
+    }
+
+    function fetchPlaceholders(url, listElement, emptyMessage) {
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                listElement.innerHTML = ''; // Clear loading state
+                if (data.columns && data.columns.length > 0) {
+                    const openBraces = '{{';
+                    const closeBraces = '}}';
+                    data.columns.forEach(col => {
+                        const item = document.createElement('div');
+                        item.className = 'placeholder-item';
+                        item.textContent = openBraces + col + closeBraces;
+                        item.title = 'Click to copy';
+                        item.onclick = () => {
+                            navigator.clipboard.writeText(item.textContent);
+                            showFlashMessage(`Copied "${item.textContent}" to clipboard!`, 'success');
+                        };
+                        listElement.appendChild(item);
+                    });
+                } else {
+                    listElement.innerHTML = `<p style="font-size: 0.9rem;">${emptyMessage}</p>`;
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching placeholders:', error);
+                listElement.innerHTML = `<p style="color: var(--danger-color);">Could not load placeholders.</p>`;
+            });
+    }
+
+    // Fetch for Main Template
+    fetchPlaceholders(
+        "{{ url_for('api_file_columns') }}",
+        document.getElementById('main-placeholder-list'),
+        'Upload a file on the <a href="{{ url_for('dashboard') }}">main dashboard</a> to see available placeholders.'
+    );
+
+    // Fetch for Follow-up Template
+    fetchPlaceholders(
+        "{{ url_for('api_follow_up_file_columns') }}",
+        document.getElementById('follow-up-placeholder-list'),
+        'Upload a file on the <a href="{{ url_for('follow_up_dashboard') }}">follow-up page</a> to see available placeholders.'
+    );
+
+    document.getElementById('load-us-template').addEventListener('click', () => loadTemplate('us'));
+    document.getElementById('load-canada-template').addEventListener('click', () => loadTemplate('ca'));
+});
+</script>
+
+{% endblock %}
+
+<!-- This is a new file, but since we are deleting follow_up_template.html, we can treat this as a modification -->

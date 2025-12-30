@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Contacts{% endblock %}
+
+{% block content %}
+<div class="upload-container">
+  <h2>Upload New Dataset</h2>
+  <p class="upload-info">
+    Upload a CSV or Excel file containing your contacts. Ensure it has a column for email addresses.
+  </p>
+  <form method="post" enctype="multipart/form-data" class="upload-bar">
+    <input type="file" id="file" name="file" required>
+    <button type="submit">Upload</button>
+  </form>
+</div>
+{% endblock %}

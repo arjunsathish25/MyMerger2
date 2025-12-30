@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Screen</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="h-full font-sans">
+    <div class="flex h-full min-h-full">
+        <!-- Left Half - Characters -->
+        <div class="flex-1 bg-gray-100 flex items-center justify-center relative overflow-hidden">
+            <div class="relative w-72 h-72">
+                <!-- Orange Semicircle Character -->
+                <div id="orange-character" class="character character-interactive absolute top-8 left-8 cursor-pointer" onclick="characterReact(this)">
+                    <div class="w-20 h-10 bg-orange-400 rounded-t-full relative transition-all duration-300 hover:bg-orange-500 hover:scale-110 shadow-lg">
+                        <!-- Eyes -->
+                        <div class="character-eye-container absolute top-2 left-2">
+                            <div class="w-4 h-4 bg-white rounded-full relative shadow-sm">
+                                <div class="character-eye w-2 h-2 bg-black rounded-full absolute top-1 left-1"></div>
+                            </div>
+                        </div>
+                        <div class="character-eye-container absolute top-2 right-2">
+                            <div class="w-4 h-4 bg-white rounded-full relative shadow-sm">
+                                <div class="character-eye w-2 h-2 bg-black rounded-full absolute top-1 left-1"></div>
+                            </div>
+                        </div>
+                        <!-- Mouth -->
+                        <div class="character-mouth orange-mouth absolute bottom-1 left-1/2 transform -translate-x-1/2 w-4 h-2 bg-white rounded-full opacity-90"></div>
+                    </div>
+                </div>
+                
+                <!-- Purple Rectangle Character -->
+                <div id="purple-character" class="character character-interactive absolute top-4 right-8 cursor-pointer" onclick="characterReact(this)">
+                    <div class="w-16 h-32 bg-purple-500 rounded-lg relative transition-all duration-300 hover:bg-purple-600 hover:scale-110 shadow-lg">
+                        <!-- Eyes -->
+                        <div class="character-eye-container absolute top-4 left-2">
+                            <div class="w-4 h-4 bg-white rounded-full relative shadow-sm">
+                                <div class="character-eye w-2 h-2 bg-black rounded-full absolute top-1 left-1"></div>
+                            </div>
+                        </div>
+                        <div class="character-eye-container absolute top-4 right-2">
+                            <div class="w-4 h-4 bg-white rounded-full relative shadow-sm">
+                                <div class="character-eye w-2 h-2 bg-black rounded-full absolute top-1 left-1"></div>
+                            </div>
+                        </div>
+                        <!-- Mouth -->
+                        <div class="character-mouth purple-mouth absolute top-12 left-1/2 transform -translate-x-1/2 w-3 h-2 bg-white rounded-sm opacity-90"></div>
+                    </div>
+                </div>
+                
+                <!-- Black Square Character -->
+                <div id="black-character" class="character character-interactive absolute bottom-16 left-12 cursor-pointer" onclick="characterReact(this)">
+                    <div class="w-16 h-16 bg-black rounded-lg relative transition-all duration-300 hover:bg-gray-800 hover:scale-110 shadow-lg">
+                        <!-- Eyes -->
+                        <div class="character-eye-container absolute top-3 left-2">
+                            <div class="w-3 h-3 bg-white rounded-full relative shadow-sm">
+                                <div class="character-eye w-1.5 h-1.5 bg-black rounded-full absolute top-0.5 left-0.5"></div>
+                            </div>
+                        </div>
+                        <div class="character-eye-container absolute top-3 right-2">
+                            <div class="w-3 h-3 bg-white rounded-full relative shadow-sm">
+                                <div class="character-eye w-1.5 h-1.5 bg-black rounded-full absolute top-0.5 left-0.5"></div>
+                            </div>
+                        </div>
+                        <!-- Mouth -->
+                        <div class="character-mouth black-mouth absolute bottom-3 left-1/2 transform -translate-x-1/2 w-3 h-1 bg-white rounded-full opacity-90"></div>
+                    </div>
+                </div>
+                
+                <!-- Yellow Blob Character -->
+                <div id="yellow-character" class="character character-interactive absolute bottom-8 right-12 cursor-pointer" onclick="characterReact(this)">
+                    <div class="w-24 h-10 bg-yellow-400 rounded-full relative transform rotate-12 transition-all duration-300 hover:bg-yellow-500 hover:scale-110 shadow-lg">
+                        <!-- Eyes -->
+                        <div class="character-eye-container absolute top-1 left-4">
+                            <div class="w-3 h-3 bg-white rounded-full relative shadow-sm">
+                                <div class="character-eye w-1.5 h-1.5 bg-black rounded-full absolute top-0.5 left-0.5"></div>
+                            </div>
+                        </div>
+                        <div class="character-eye-container absolute top-1 right-4">
+                            <div class="w-3 h-3 bg-white rounded-full relative shadow-sm">
+                                <div class="character-eye w-1.5 h-1.5 bg-black rounded-full absolute top-0.5 left-0.5"></div>
+                            </div>
+                        </div>
+                        <!-- Mouth -->
+                        <div class="character-mouth yellow-mouth absolute bottom-1 left-1/2 transform -translate-x-1/2 w-5 h-1 bg-white rounded-full opacity-90"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Half - Login Form -->
+        <div class="flex-1 bg-white flex items-center justify-center">
+            <div class="w-full max-w-lg px-12">
+                <div class="text-center mb-10">
+                    <h1 class="text-4xl font-semibold text-gray-900 mb-3">Welcome back!</h1>
+                    <p class="text-lg text-gray-500">Please sign in to your account</p>
+                </div>
+                
+                <form class="space-y-6" onsubmit="handleLogin(event)">
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-600 mb-2">Email</label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            required
+                            class="input-field w-full px-4 py-4 text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white"
+                            placeholder="Enter your email"
+                            oninput="handleEmailTyping()"
+                            onfocus="handleEmailFocus()"
+                            onblur="resetExpressions()"
+                        >
+                    </div>
+                    
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-600 mb-2">Password</label>
+                        <div class="relative">
+                            <input 
+                                type="password" 
+                                id="password" 
+                                name="password" 
+                                required
+                                class="input-field w-full px-4 py-4 pr-12 text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white"
+                                placeholder="Enter your password"
+                                oninput="handlePasswordTyping()"
+                                onfocus="handlePasswordFocus()"
+                                onblur="resetExpressions()"
+                            >
+                            <button 
+                                type="button" 
+                                onclick="togglePasswordVisibility()"
+                                class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                            >
+                                <svg id="eye-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <button 
+                        type="submit" 
+                        class="login-btn w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 px-6 rounded-lg text-base font-medium transition-all duration-200 hover:shadow-lg hover:from-blue-700 hover:to-blue-800 transform hover:-translate-y-0.5"
+                        onmouseenter="handleLoginHover()"
+                        onmouseleave="resetExpressions()"
+                    >
+                        Log In
+                    </button>
+                </form>
+                
+                <div class="mt-6">
+                    <div class="relative">
+                        <div class="absolute inset-0 flex items-center">
+                            <div class="w-full border-t border-gray-200"></div>
+                        </div>
+                        <div class="relative flex justify-center text-sm">
+                            <span class="px-3 bg-white text-gray-400">or</span>
+                        </div>
+                    </div>
+                    
+                    <button 
+                        type="button" 
+                        onclick="handleMicrosoftLogin()"
+                        onmouseenter="handleMicrosoftHover()"
+                        onmouseleave="resetExpressions()"
+                        class="microsoft-btn w-full mt-4 bg-white border border-gray-200 text-gray-600 py-4 px-6 rounded-lg text-base font-medium transition-all duration-200 hover:shadow-md hover:bg-gray-50 flex items-center justify-center space-x-3 transform hover:-translate-y-0.5"
+                    >
+                        <svg class="microsoft-icon w-5 h-5" viewBox="0 0 23 23">
+                            <path fill="#f25022" d="M1 1h10v10H1z"/>
+                            <path fill="#00a4ef" d="M12 1h10v10H12z"/>
+                            <path fill="#7fba00" d="M1 12h10v10H1z"/>
+                            <path fill="#ffb900" d="M12 12h10v10H12z"/>
+                        </svg>
+                        <span>Login with Microsoft</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98b5ffc510837e90',t:'MTc1OTkzMDI5Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+</body>
+</html>

@@ -1,0 +1,400 @@
+{% extends "base.html" %}
+{% block title %}Sent Mail History - Mail Merger{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4" style="max-width: 1600px; margin: 0 auto;">
+  <section class="status-card spotlight-card">
+      <div class="results-controls" style="margin-bottom: 1.5rem;">
+          <h2 style="margin: 0;">Sent Mail History ({{ pagination.total }})</h2>
+          <div class="actions-group">
+              <a href="{{ url_for('export_history_csv', q=search_query, start_date=start_date, end_date=end_date) }}" class="btn-secondary"><i data-feather="download"></i> Export CSV</a>
+              <form action="{{ url_for('clear_all_history') }}" method="post" onsubmit="return confirm('Are you sure you want to delete ALL email history? This action cannot be undone.');" style="display: inline-block;">
+                  <button type="submit" class="btn-danger"><i data-feather="trash-2"></i> Delete All History</button>
+              </form>
+          </div>
+      </div>
+
+      <form method="GET" action="{{ url_for('history') }}" class="history-filter-form">
+          <input type="search" name="q" placeholder="Search by email, name, or company..." value="{{ search_query or '' }}">
+          <input type="date" name="start_date" value="{{ start_date or '' }}" title="Start date">
+          <span class="date-separator">to</span>
+          <input type="date" name="end_date" value="{{ end_date or '' }}" title="End date">
+          <button type="submit" class="btn-primary"><i data-feather="filter"></i> Filter</button>
+          {% if search_query or start_date or end_date %}
+              <a href="{{ url_for('history') }}" class="btn-secondary" title="Clear all filters"><i data-feather="x"></i> Clear</a>
+          {% endif %}
+      </form>
+
+      <div class="results-table-container" style="margin-top: 1.5rem;">
+          <table class="results-table">
+              <thead>
+                  <tr>
+                      {% macro sort_th(column_key, display_name) %}
+                          {% set next_order = 'asc' if sort_by == column_key and sort_order == 'desc' else 'desc' %}
+                          <th class="sortable">
+                              <a href="{{ url_for('history', sort_by=column_key, sort_order=next_order, q=search_query, start_date=start_date, end_date=end_date) }}">
+                                  {{ display_name }}
+                                  {% if sort_by == column_key %}
+                                      <i data-feather="{{ 'arrow-down' if sort_order == 'desc' else 'arrow-up' }}" class="sort-icon"></i>
+                                  {% endif %}
+                              </a>
+                          </th>
+                      {% endmacro %}
+                      {{ sort_th('sent_at', 'Sent At') }}
+                      {{ sort_th('email', 'Email') }}
+                      {{ sort_th('name', 'Name') }}
+                      {{ sort_th('company_name', 'Company') }}
+                      {{ sort_th('status', 'Status') }}
+                      <th>Actions</th>
+                  </tr>
+              </thead>
+              <tbody>
+                {% for log in pagination.items %}
+                    {% macro status_cell_content(log) %}
+                        {% set status_class = 'pending' %}
+                        {% set status_icon = 'clock' %}
+                        {% if log.reply_received %}
+                            {% set status_class = 'replied' %}
+                            {% set status_icon = 'inbox' %}
+                        {% elif log.status == 'Mono Sent' %}
+                            {% set status_class = 'info' %}
+                            {% set status_icon = 'mail' %}
+                        {% elif log.status == 'Send Your details' %}
+                            {% set status_class = 'sent' %}
+                            {% set status_icon = 'check-circle' %}
+                        {% elif 'Sent' in log.status %}
+                            {% set status_class = 'sent' %}
+                            {% set status_icon = 'send' %}
+                        {% elif log.status == 'We Have Detailers' %}
+                            {% set status_class = 'failed' %}
+                            {% set status_icon = 'user-x' %}
+                        {% elif log.status == 'Try Later' %}
+                            {% set status_class = 'pending' %}
+                            {% set status_icon = 'pause-circle' %}
+                        {% elif log.status == 'Left a voicemail' %}
+                            {% set status_class = 'info' %}
+                            {% set status_icon = 'phone-call' %}
+                        {% elif log.status == 'Number No Longer Available' %}
+                            {% set status_class = 'archived' %}
+                            {% set status_icon = 'slash' %}
+                        {% elif 'Failed' in log.status %}
+                            {% set status_class = 'failed' %}
+                            {% set status_icon = 'alert-triangle' %}
+                        {% endif %}
+                        <span class="status-cell status-{{ status_class }}">
+                            <i data-feather="{{ status_icon }}"></i>
+                            <span>{{ log.status }}</span>
+                        </span>
+                    {% endmacro %}
+                  <tr class="result-row" id="log-row-{{ log.id }}" data-details-target="#details-{{ log.id }}" data-log-id="{{ log.id }}">
+                      {% set sent_at_ist = log.sent_at | to_ist %}
+                      <td title="{{ sent_at_ist.strftime('%Y-%m-%d %H:%M:%S %Z') }}">
+                          {{ sent_at_ist.strftime('%Y-%m-%d %H:%M') }}
+                      </td>
+                      <td>{{ log.email }}</td>
+                      <td>{{ log.name or 'N/A' }}</td>
+                      <td>{{ log.company_name or 'N/A' }}</td>
+                      <td>
+                          {{ status_cell_content(log) }}
+                      </td>
+                      <td class="actions-cell">
+                          <button class="btn-icon" title="View Details">
+                              <i data-feather="chevron-down"></i>
+                          </button>
+                      </td>
+                  </tr>
+                  <tr class="details-row" id="details-{{ log.id }}">
+                      <td colspan="6">
+                          <div class="details-wrapper">
+                              <div class="details-content">
+                                  <dl class="details-list">
+                                      <dt>Email</dt><dd>{{ log.email }}</dd>
+                                      <dt>Name</dt><dd>{{ log.name or 'N/A' }}</dd>
+                                      <dt>Company</dt><dd>{{ log.company_name or 'N/A' }}</dd>
+                                      {% set sent_at_ist = log.sent_at | to_ist %}
+                                      <dt>Sent At</dt><dd title="{{ sent_at_ist.strftime('%Y-%m-%d %H:%M:%S %Z') }}">{{ sent_at_ist.strftime('%b %d, %Y at %H:%M') }} (IST)</dd>
+                                  </dl>
+
+                                  <div class="reply-details">
+                                      {% if log.reply_received and log.reply_received_at %}
+                                          <h4><i data-feather="inbox"></i> Reply Received <span title="{{ (log.reply_received_at | to_ist).strftime('%Y-%m-%d %H:%M:%S %Z') }}">{{ (log.reply_received_at | to_ist).strftime('%b %d, %Y at %H:%M') }} (IST)</span></h4>
+                                          <blockquote class="reply-preview">{{ log.reply_content|striptags|truncate(300) }}</blockquote>
+                                      {% elif 'Failed' in log.status %}
+                                          <h4><i data-feather="alert-circle"></i> Send Failure</h4>
+                                          {% if log.error_details %}
+                                              <pre class="error-preview">{{ log.error_details }}</pre>
+                                          {% else %}
+                                              <p>The email failed to send. No specific error was logged.</p>
+                                          {% endif %}
+                                      {% elif 'Sent' in log.status or 'Mono Sent' in log.status %}
+                                          <h4><i data-feather="check-circle"></i> Sent Successfully</h4>
+                                          <p>This email has been sent. The system will automatically detect and log any replies here.</p>
+                                      {% else %}
+                                          <h4><i data-feather="edit"></i> Manual Status</h4>
+                                          <p>The status for this log was manually set to <strong>{{ log.status }}</strong>.</p>
+                                      {% endif %}
+                                  </div>
+
+                                  <div class="details-actions">
+                                      <div class="manual-status-group">
+                                          <p>Set manual status:</p>
+                                          <div class="manual-status-buttons">
+                                              <button class="btn-manual-status btn-status-negative" data-log-id="{{ log.id }}" data-status="We Have Detailers"><i data-feather="user-x"></i> We Have Detailers</button>
+                                              <button class="btn-manual-status btn-status-neutral" data-log-id="{{ log.id }}" data-status="Try Later"><i data-feather="pause-circle"></i> Try Later</button>
+                                              <button class="btn-manual-status btn-status-positive" data-log-id="{{ log.id }}" data-status="Send Your details"><i data-feather="check-circle"></i> Send Your details</button>
+                                              <button class="btn-manual-status btn-status-info" data-log-id="{{ log.id }}" data-status="Left a voicemail"><i data-feather="phone-call"></i> Left a voicemail</button>
+                                              <button class="btn-manual-status btn-status-archived" data-log-id="{{ log.id }}" data-status="Number No Longer Available"><i data-feather="slash"></i> Number No Longer Available</button>
+                                          </div>
+                                      </div>
+                                      <form method="POST" action="{{ url_for('delete_history_log', log_id=log.id) }}" onsubmit="return confirm('Are you sure you want to delete this history entry?');" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-light);">
+                                          <button type="submit" class="btn-danger"><i data-feather="trash-2"></i> Delete This Log Entry</button>
+                                      </form>
+                                  </div>
+                              </div>
+                          </div>
+                      </td>
+                  </tr>
+                  {% else %}
+                  <tr>
+                      <td colspan="6" class="no-results">No emails found matching your criteria.</td>
+                  </tr>
+                  {% endfor %}
+              </tbody>
+          </table>
+      </div>
+
+      {% if pagination.pages > 1 %}
+      <nav class="pagination-nav" style="margin-top: 1.5rem;">
+        <ul class="pagination">
+          <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}"><a class="page-link" href="{{ url_for('history', page=pagination.prev_num, q=search_query, sort_by=sort_by, sort_order=sort_order, start_date=start_date, end_date=end_date) if pagination.has_prev else '#' }}">&laquo;</a></li>
+          {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if page_num %}<li class="page-item {% if pagination.page == page_num %}active{% endif %}"><a class="page-link" href="{{ url_for('history', page=page_num, q=search_query, sort_by=sort_by, sort_order=sort_order, start_date=start_date, end_date=end_date) }}">{{ page_num }}</a></li>
+            {% else %}<li class="page-item disabled"><span class="page-link">...</span></li>{% endif %}
+          {% endfor %}
+          <li class="page-item {% if not pagination.has_next %}disabled{% endif %}"><a class="page-link" href="{{ url_for('history', page=pagination.next_num, q=search_query, sort_by=sort_by, sort_order=sort_order, start_date=start_date, end_date=end_date) if pagination.has_next else '#' }}">&raquo;</a></li>
+        </ul>
+      </nav>
+      {% endif %}
+  </section>
+</div>
+<style>
+    .sortable a {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        color: inherit;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+    .sortable a:hover {
+        color: var(--primary-orange);
+    }
+    .sort-icon {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+    }
+    .results-table th, .results-table td {
+        padding: 0.85rem 1.5rem; /* Increased horizontal padding */
+        white-space: nowrap;
+    }
+    .results-controls .actions-group {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+    .history-filter-form {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        padding: 1rem;
+        background-color: var(--bg-gray);
+        border-radius: 12px;
+    }
+    body.dark .history-filter-form {
+        background-color: rgba(255,255,255,0.05);
+    }
+    .history-filter-form input[type="search"] {
+        flex-grow: 1;
+        min-width: 250px;
+        padding: 10px 15px;
+        border-radius: 25px;
+        border: 1px solid var(--border-light);
+        background: var(--bg-light);
+        font-size: 0.9rem;
+    }
+    body.dark .history-filter-form input[type="search"] {
+        background: var(--card-bg-dark);
+        border-color: var(--border-dark);
+        color: var(--text-light);
+    }
+    .history-filter-form input[type="date"] {
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid var(--border-light);
+        background: var(--bg-light);
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        line-height: 1.5; /* Align height with buttons */
+    }
+    body.dark .history-filter-form input[type="date"] {
+        background: var(--card-bg-dark);
+        border-color: var(--border-dark);
+        color: var(--text-muted-dark);
+        color-scheme: dark;
+    }
+    .history-filter-form .date-separator {
+        color: var(--text-muted);
+        font-weight: 600;
+    }
+</style>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tableBody = document.querySelector('.results-table tbody');
+    if (!tableBody) return;
+
+    // --- Accordion Logic ---
+    tableBody.addEventListener('click', function(event) {
+        const clickedRow = event.target.closest('.result-row');
+        if (!clickedRow) return;
+
+        // Only trigger accordion if the click is not on an interactive element like a button or link,
+        // unless it's the specific toggle button.
+        const isToggleButton = event.target.closest('.btn-icon');
+        if (!isToggleButton && event.target.closest('button, a')) {
+            return;
+        }
+
+        const isAlreadyActive = clickedRow.classList.contains('active');
+
+        // Close any other open rows
+        document.querySelectorAll('.result-row.active').forEach(activeRow => {
+            if (activeRow !== clickedRow) {
+                activeRow.classList.remove('active');
+                const detailsRow = document.querySelector(activeRow.dataset.detailsTarget);
+                if (detailsRow) {
+                    const wrapper = detailsRow.querySelector('.details-wrapper');
+                    if (wrapper) wrapper.style.maxHeight = null;
+                }
+            }
+        });
+
+        // Toggle the clicked row
+        clickedRow.classList.toggle('active');
+        const targetId = clickedRow.dataset.detailsTarget;
+        const detailsRow = document.querySelector(targetId);
+        if (detailsRow) {
+            const wrapper = detailsRow.querySelector('.details-wrapper');
+            if (wrapper) {
+                if (clickedRow.classList.contains('active')) {
+                    feather.replace(); // Redraw icons inside the expanded row
+                    wrapper.style.maxHeight = wrapper.scrollHeight + "px";
+                } else {
+                    wrapper.style.maxHeight = null;
+                }
+            }
+        }
+    });
+
+    // --- Manual Status Update Logic ---
+    // Helper function to get status-specific class and icon
+    function getStatusInfo(status, replyReceived = false) {
+        if (replyReceived) {
+            return { status_class: 'replied', status_icon: 'inbox' };
+        }
+        const statusMap = {
+            'Mono Sent': { class: 'info', icon: 'mail' },
+            'Send Your details': { class: 'sent', icon: 'check-circle' },
+            'We Have Detailers': { class: 'failed', icon: 'user-x' },
+            'Try Later': { class: 'pending', icon: 'pause-circle' },
+            'Left a voicemail': { class: 'info', icon: 'phone-call' },
+            'Number No Longer Available': { class: 'archived', icon: 'slash' },
+        };
+        if (statusMap[status]) {
+            return { status_class: statusMap[status].class, status_icon: statusMap[status].icon };
+        }
+        if (status.includes('Sent')) {
+            return { status_class: 'sent', status_icon: 'send' };
+        }
+        if (status.includes('Failed')) {
+            return { status_class: 'failed', status_icon: 'alert-triangle' };
+        }
+        // Default
+        return { status_class: 'pending', status_icon: 'clock' };
+    }
+
+    tableBody.addEventListener('click', function(event) {
+        const statusButton = event.target.closest('.btn-manual-status');
+        if (!statusButton) return;
+
+        event.preventDefault();
+        const logId = statusButton.dataset.logId;
+        const newStatus = statusButton.dataset.status;
+        const buttonGroup = statusButton.closest('.manual-status-buttons');
+        const originalButtonHtml = statusButton.innerHTML;
+
+        buttonGroup.querySelectorAll('button').forEach(btn => btn.disabled = true);
+        statusButton.innerHTML = '<span class="spinner"></span> Updating...';
+
+        fetch(`/api/history/log/${logId}/set_status`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: JSON.stringify({ status: newStatus }) })
+        fetch(`/api/history/log/${logId}/set_status`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: JSON.stringify({ status: newStatus }) })
+        .then(response => response.ok ? response.json() : response.json().then(err => { throw new Error(err.error || 'Server error') }))
+        .then(data => {
+            if (data.success) {
+                showFlashMessage(data.message, 'success');
+                
+                // Find the main row and the status cell
+
+                const mainRow = document.getElementById(`log-row-${logId}`);
+                if (mainRow) {
+                    const statusCellContainer = mainRow.querySelector('td:nth-child(5)'); // 5th column is Status
+                    if (statusCellContainer) {
+                        const { status_class, status_icon } = getStatusInfo(data.new_status);
+                        
+                        statusCellContainer.innerHTML = `
+                            <span class="status-cell status-${status_class}">
+                                <i data-feather="${status_icon}"></i>
+                                <span>${data.new_status}</span>
+                            </span>
+                        `;
+                        statusCellContainer.innerHTML = data.status_html;
+                    }
+                }
+
+                // Also update the details view if it's open
+                const detailsRow = document.getElementById(`details-${logId}`);
+                if (detailsRow) {
+                    const replyDetails = detailsRow.querySelector('.reply-details');
+                    if (replyDetails) {
+                        replyDetails.innerHTML = `
+                            <h4><i data-feather="edit"></i> Manual Status</h4>
+                            <p>The status for this log was manually set to <strong>${data.new_status}</strong>.</p>
+                        `;
+                    }
+                }
+
+                // Re-enable buttons and redraw all icons
+                buttonGroup.querySelectorAll('button').forEach(btn => btn.disabled = false);
+                statusButton.innerHTML = originalButtonHtml;
+                feather.replace();
+
+            } else {
+                throw new Error(data.error || 'An unknown error occurred.');
+            }
+        })
+        .catch(error => {
+            showFlashMessage('Error updating status: ' + error.message, 'danger');
+            buttonGroup.querySelectorAll('button').forEach(btn => btn.disabled = false);
+            statusButton.innerHTML = originalButtonHtml;
+            feather.replace();
+        });
+    });
+
+});
+</script>
+
+{% endblock %}

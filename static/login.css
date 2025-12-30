@@ -1,0 +1,439 @@
+/* --- Login Page Specific Styles --- */
+.login-page {
+    background: linear-gradient(135deg, #9d4edd 0%, #7209b7 50%, #3a0ca3 100%);
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    width: 100%;
+    padding: 2rem 0;
+    overflow: hidden;
+    position: relative;
+}
+
+.login-page::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('/static/glass-login-bg.svg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    z-index: -1;
+}
+
+.login-page header {
+    display: none;
+}
+
+.login-page .page-content {
+    padding-top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.login-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.animation-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.login-card {
+    flex: 0 0 400px;
+    position: relative;
+    max-width: 90vw;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+    padding: 2.5rem;
+    z-index: 10;
+    transition: all 0.4s cubic-bezier(0.645, 0.045, 0.355, 1);
+    transform-style: preserve-3d;
+    animation: slideUp 0.6s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+body.dark .login-card {
+    background: rgba(26, 27, 36, 0.25);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.login-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 20px 60px rgba(31, 38, 135, 0.5);
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+body.dark .login-card:hover {
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    background: rgba(26, 27, 36, 0.35);
+}
+
+
+.login-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.login-header h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+    color: white;
+}
+
+.login-header p {
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0;
+}
+
+/* --- Form Styles --- */
+.login-form .form-group {
+    margin-bottom: 1.25rem;
+}
+
+.login-form label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: white;
+}
+
+.input-wrapper {
+    position: relative;
+}
+
+.input-wrapper .input-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    width: 20px;
+    transition: color 0.2s ease;
+    height: 20px;
+    pointer-events: none;
+}
+
+.login-form input {
+    width: 100%;
+    padding: 12px 16px 12px 48px;
+    border-radius: 12px;
+    border: 2px solid var(--border-light);
+    background: rgba(255, 255, 255, 0.9);
+    font-size: 1rem;
+    color: var(--text-dark);
+    transition: all 0.3s ease;
+}
+
+body.dark .login-form input {
+    background: rgba(30, 30, 30, 0.9);
+    border-color: var(--border-dark);
+    color: var(--text-light);
+}
+
+.login-form input:focus {
+    outline: none;
+    border-color: var(--primary-orange);
+    box-shadow: 0 0 0 4px rgba(255, 98, 31, 0.3);
+    background: rgba(255, 255, 255, 1);
+    transform: translateY(-2px);
+}
+
+body.dark .login-form input:focus {
+    background: rgba(30, 30, 30, 1);
+}
+
+.input-wrapper:focus-within .input-icon {
+    color: var(--primary-orange);
+}
+
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 4px;
+}
+
+.form-actions {
+    margin-top: 2rem;
+}
+
+.btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.2);
+    transition: left 0.4s ease;
+    z-index: -1;
+}
+
+.btn:hover::before {
+    left: 100%;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-orange), #ff8c42);
+    color: white;
+    box-shadow: 0 4px 15px rgba(255, 98, 31, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(255, 98, 31, 0.5);
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 1.5rem 0;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
+body.dark .divider::before,
+body.dark .divider::after {
+    border-bottom-color: var(--border-dark);
+}
+.divider span {
+    padding: 0 1rem;
+}
+
+.btn-microsoft {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+body.dark .btn-microsoft {
+    background: var(--card-bg-dark);
+    color: var(--text-light);
+    border-color: var(--border-dark);
+}
+
+.btn-microsoft:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-2px);
+}
+
+.btn-microsoft .microsoft-icon {
+    width: 20px;
+    height: 20px;
+}
+
+body.dark .btn-microsoft:hover {
+    background: var(--bg-dark);
+    border-color: var(--text-muted-dark);
+}
+
+/* --- Character States --- */
+.character-panel.form-focused {
+    transform: translateX(-50%) translateY(-20px) scale(0.9);
+}
+
+.character-panel.is-typing #purple-character { transform: rotate(-5deg) translateY(5px); }
+.character-panel.is-typing #orange-character { transform: rotate(5deg) translateY(5px); }
+
+.btn-primary.is-submitting {
+    cursor: wait;
+    transform: translateY(0) scale(0.95);
+    box-shadow: none;
+}
+
+.btn-primary.is-submitting span,
+.btn-primary.is-submitting svg {
+    opacity: 0;
+    transition: opacity 0.1s ease-out;
+}
+
+.btn-primary.is-submitting::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.5);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+.character-interactive.eyes-focused .character-eye-white {
+    height: 22px;
+    border-radius: 50%;
+}
+
+.character-interactive.eyes-worried .character-eye-white {
+    height: 14px;
+    border-radius: 40%;
+    transform: translateY(2px);
+}
+
+.character-interactive.eyes-excited .character-eye-white {
+    height: 22px;
+    border-radius: 50%;
+}
+.character-interactive.eyes-excited .character-eye {
+    width: 10px;
+    height: 10px;
+}
+
+.character-mouth.mouth-surprised {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    bottom: 15px;
+}
+
+/* Typing mouths */
+.orange-mouth-typing { transform: translateX(-50%) scaleX(1.5); }
+.purple-mouth-typing { width: 12px; height: 12px; border-radius: 50%; bottom: 18px; }
+.black-mouth-typing { transform: translateX(-50%) rotate(10deg); }
+.yellow-mouth-typing { transform: translateX(-50%) translateY(-2px); }
+
+/* Password mouths */
+.orange-mouth-password { width: 24px; border-radius: 4px; }
+.purple-mouth-password { transform: translateX(-50%) scaleY(0.5); }
+.black-mouth-password { height: 4px; bottom: 22px; }
+.yellow-mouth-password { width: 14px; height: 14px; border-radius: 50%; bottom: 16px; }
+
+/* Login hover mouths */
+.orange-mouth-login, .purple-mouth-login, .black-mouth-login, .yellow-mouth-login {
+    width: 24px;
+    height: 12px;
+    border-radius: 0 0 12px 12px;
+}
+
+/* Microsoft hover mouths */
+.orange-mouth-microsoft, .purple-mouth-microsoft, .black-mouth-microsoft, .yellow-mouth-microsoft {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    bottom: 15px;
+}
+
+/* --- Full Height Page Layout --- */
+.full-height-page .page-content.full-height-content {
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* --- Responsive Layout for Login Page --- */
+@media (max-width: 991px) {
+    .login-container {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .animation-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        margin-bottom: 2rem;
+    }
+
+    .login-card {
+        width: 100%;
+    }
+
+    .husky {
+        margin: 0 auto;
+        max-width: 350px;
+        width: 80vw;
+        height: auto;
+        display: block;
+    }
+
+    /* Responsive adjustments for dog animation */
+    @media (max-width: 600px) {
+        .husky {
+            max-width: 220px;
+            width: 90vw;
+        }
+        .animation-container {
+            margin-bottom: 1rem;
+        }
+    }
+}

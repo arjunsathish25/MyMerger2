@@ -1,0 +1,108 @@
+<div class="results-header">
+  <div class="filter-tabs">
+    <a href="{{ url_for('results') }}" class="filter-tab {% if not active_filter %}active{% endif %}">All ({{ stats.Total }})</a>
+    <a href="{{ url_for('results', status='Sent') }}" class="filter-tab {% if active_filter == 'Sent' %}active{% endif %}">Sent ({{ stats.Sent }})</a>
+    <a href="{{ url_for('results', status='Replied') }}" class="filter-tab {% if active_filter == 'Replied' %}active{% endif %}">Replied ({{ stats.Replied }})</a>
+    <a href="{{ url_for('results', status='Failed') }}" class="filter-tab {% if active_filter == 'Failed' %}active{% endif %}">Failed ({{ stats.Failed }})</a>
+    <a href="{{ url_for('results', status='Pending') }}" class="filter-tab {% if active_filter == 'Pending' %}active{% endif %}">Pending ({{ stats.Pending }})</a>
+  </div>
+  <form class="search-bar" action="{{ url_for('results') }}" method="get">
+    <input type="hidden" name="status" value="{{ active_filter or '' }}">
+    <input type="search" name="q" placeholder="Search by email, name, or company..." value="{{ search_query or '' }}">
+    <button type="submit"><i data-feather="search"></i></button>
+    {% if search_query %}
+      <a href="{{ url_for('results', status=active_filter) }}" class="clear-search" title="Clear search"><i data-feather="x-circle"></i></a>
+    {% endif %}
+  </form>
+</div>
+
+<div class="results-table-container">
+  <table class="results-table">
+    <thead>
+      <tr>
+        <th>Status</th>
+        <th>Email</th>
+        <th>Name</th>
+        <th>Company</th>
+        <th>Last Updated</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for contact in pagination.items %}
+      <tr class="result-row" data-details-target="#details-{{ contact.id }}">
+        <td>
+          {% set status_class = 'pending' %}
+          {% set status_icon = 'clock' %}
+          {% if 'Replied' in contact.status %}
+            {% set status_class = 'replied' %}
+            {% set status_icon = 'inbox' %}
+          {% elif 'Sent' in contact.status %}
+            {% set status_class = 'sent' %}
+            {% set status_icon = 'send' %}
+          {% elif 'Failed' in contact.status or 'Retrying' in contact.status %}
+            {% set status_class = 'failed' %}
+            {% set status_icon = 'alert-triangle' %}
+          {% endif %}
+          <span class="status-cell status-{{ status_class }}">
+            <i data-feather="{{ status_icon }}"></i>
+            <span>{{ contact.status }}</span>
+          </span>
+        </td>
+        <td>{{ contact.email }}</td>
+        <td>{{ contact.name or 'N/A' }}</td>
+        <td>{{ contact.company_name or 'N/A' }}</td>
+        <td>{{ contact.last_update.strftime('%Y-%m-%d %H:%M') }}</td>
+      </tr>
+      <tr class="details-row" id="details-{{ contact.id }}">
+        <td colspan="5">
+          <div class="details-wrapper">
+            <div class="details-content">
+              <dl class="details-list">
+                <dt>Email</dt>
+                <dd>{{ contact.email }}</dd>
+              </dl>
+
+              <div class="reply-details">
+                {% if 'Replied' in contact.status %}
+                  <h4><i data-feather="inbox"></i> Reply Received <span title="{{ contact.reply_received_at.strftime('%Y-%m-%d %H:%M:%S') }}">{{ contact.reply_received_at.strftime('%b %d, %Y') }}</span></h4>
+                  <blockquote class="reply-preview">{{ contact.reply_content }}</blockquote>
+                {% elif 'Failed' in contact.status or 'Retrying' in contact.status %}
+                  <h4><i data-feather="alert-circle"></i> Send Failure</h4>
+                  {% if contact.error_details %}
+                    <pre class="error-preview">{{ contact.error_details }}</pre>
+                  {% else %}
+                    <p>An unknown error occurred. The system will retry.</p>
+                  {% endif %}
+                {% elif 'Sent' in contact.status %}
+                  <h4><i data-feather="check-circle"></i> Sent Successfully</h4>
+                  <p>This email has been sent and is awaiting a reply. The system will automatically detect and log any replies.</p>
+                {% else %}
+                  <h4><i data-feather="clock"></i> Pending</h4>
+                  <p>This contact is in the queue and will be processed by the scheduler soon.</p>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="5" class="no-results">No contacts found matching your criteria.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if pagination.pages > 1 %}
+<nav class="pagination-nav">
+  <ul class="pagination">
+    <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}"><a class="page-link" href="{{ url_for('results', page=pagination.prev_num, status=active_filter, q=search_query) if pagination.has_prev else '#' }}">&laquo;</a></li>
+    {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+      {% if page_num %}<li class="page-item {% if pagination.page == page_num %}active{% endif %}"><a class="page-link" href="{{ url_for('results', page=page_num, status=active_filter, q=search_query) }}">{{ page_num }}</a></li>
+      {% else %}<li class="page-item disabled"><span class="page-link">...</span></li>{% endif %}
+    {% endfor %}
+    <li class="page-item {% if not pagination.has_next %}disabled{% endif %}"><a class="page-link" href="{{ url_for('results', page=pagination.next_num, status=active_filter, q=search_query) if pagination.has_next else '#' }}">&raquo;</a></li>
+  </ul>
+</nav>
+{% endif %}

@@ -1,0 +1,63 @@
+<div class="results-container">
+    <table>
+        <tbody>
+            {% for contact in pagination.items %}
+            <tr class="result-row" data-index="{{ contact.index }}">
+                <td>{{ contact.name }}</td>
+                <td>{{ contact.email_id }}</td>
+                <td>{{ contact.company_name or 'N/A' }}</td>
+                <td>
+                    {% set status = contact.status %}
+                    {% set status_class = 'pending' %}
+                    {% set status_icon = 'clock' %}
+                    {% if 'Sent' in status %}
+                        {% set status_class = 'sent' %}
+                        {% set status_icon = 'check-circle' %}
+                    {% elif 'Failed' in status %}
+                        {% set status_class = 'failed' %}
+                        {% set status_icon = 'alert-triangle' %}
+                    {% elif 'Replied' in status %}
+                        {% set status_class = 'replied' %}
+                        {% set status_icon = 'inbox' %}
+                    {% endif %}
+                    <span class="status-cell status-{{ status_class }}"><i data-feather="{{ status_icon }}"></i><span>{{ status }}</span></span>
+                </td>
+                <td><span title="{{ contact.last_update.strftime('%Y-%m-%d %H:%M:%S') if contact.last_update else '' }}">{{ contact.last_update|timesince }}</span></td>
+                <td class="actions-cell">
+                    <button class="btn-icon" title="View Details"><i data-feather="chevron-down"></i></button>
+                </td>
+            </tr>
+            <tr class="details-row" id="details-{{ contact.index }}" style="display: none;">
+                <td colspan="6">
+                    <div class="details-wrapper">
+                        <!-- Details will be loaded here via AJAX -->
+                        <div class="context-spinner" style="margin: 2rem auto;"></div>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if pagination.pages > 1 %}
+<nav class="pagination-nav" aria-label="Page navigation">
+    <ul class="pagination">
+        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('results', page=pagination.prev_num, q=request.args.get('q', ''), status=request.args.get('status', '')) }}">Previous</a>
+        </li>
+        {% for page_num in pagination.iter_pages() %}
+            {% if page_num %}
+                <li class="page-item {% if pagination.page == page_num %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('results', page=page_num, q=request.args.get('q', ''), status=request.args.get('status', '')) }}">{{ page_num }}</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">…</span></li>
+            {% endif %}
+        {% endfor %}
+        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('results', page=pagination.next_num, q=request.args.get('q', ''), status=request.args.get('status', '')) }}">Next</a>
+        </li>
+    </ul>
+</nav>
+{% endif %}

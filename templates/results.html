@@ -1,0 +1,1295 @@
+{% extends "base.html" %}
+{% block title %}Results & Logs - Mail Merger{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4" style="max-width: 1600px; margin: 0 auto;">    
+  <div class="history-filter-card">
+      <form class="history-filter-form" id="history-chart-filter-form">
+          <h4 class="filter-title"><i data-feather="calendar"></i> Filter Charts by Date</h4>
+          <input type="date" name="start_date" id="chart_start_date" title="Start date">
+          <span class="date-separator">to</span>
+          <input type="date" name="end_date" id="chart_end_date" title="End date">
+          <button type="submit" class="btn-primary"><i data-feather="filter"></i> Filter</button>
+          <button type="reset" class="btn-secondary" title="Clear date filter"><i data-feather="x"></i> Clear</button>
+      </form>
+  </div>
+
+  <div class="status-grid" style="grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));">
+    <!-- 1. Today's Campaign Activity -->
+    <div class="status-card chart-card expandable">
+      <div class="card-header-flex">
+        <h3>Today's Campaign Activity</h3>
+        <i data-feather="maximize-2" class="expand-icon"></i>
+      </div>
+      <div class="chart-container" style="height: 220px;">
+        <canvas id="currentCampaignChart"></canvas>
+      </div> 
+      {% if current_stats %}
+      <!-- This summary is always visible -->
+      <div class="stats-summary" id="today-stats-summary">
+          <div class="stat-item stat-total">
+              <span>Total Processed Today</span>
+              <strong data-stat="Total">{{ current_stats.get('Sent', 0) + current_stats.get('Failed', 0) + current_stats.get('Replied', 0) }}</strong>
+          </div>
+          <div class="stat-item stat-sent">
+              <span><i data-feather="check-circle"></i> Sent</span>
+              <strong data-stat="Sent">{{ current_stats.get('Sent', 0) }}</strong>
+          </div>
+          <div class="stat-item stat-replied">
+              <span><i data-feather="inbox"></i> Replied</span>
+              <strong data-stat="Replied">{{ current_stats.get('Replied', 0) }}</strong>
+          </div>
+          <div class="stat-item stat-failed">
+              <span><i data-feather="x-circle"></i> Failed</span>
+              <strong data-stat="Failed">{{ current_stats.get('Failed', 0) }}</strong>
+          </div>
+          <!-- You can add F-up Mono Sent/Failed here if needed -->
+      </div>
+      {% endif %}
+      <div class="detailed-stats">
+        <h4>About Today's Activity</h4>
+        <p>This chart provides a real-time snapshot of campaign interactions. The "day" is defined from <strong>3:00 PM IST</strong> of the previous day to 3:00 PM IST of the current day, resetting automatically at that time.</p>
+        <p>It includes emails sent from the main campaign, replies received, and any failures that occurred within this specific time window.</p>
+      </div>
+    </div>
+
+    <!-- 2. Initial Campaign History -->
+    <div class="status-card chart-card expandable" id="scheduled-history-card">
+      <div class="card-header-flex">
+        <h3>Initial Campaign History</h3>
+        <i data-feather="maximize-2" class="expand-icon"></i>
+      </div>
+      <div class="chart-container" style="height: 220px;">
+        <canvas id="scheduledHistoryChart"></canvas>
+      </div>
+      <!-- This summary is now always visible -->
+      <div class="stats-summary">
+        <div class="stats-summary">
+          <div class="stat-item stat-sent">
+              <span><i data-feather="check-circle"></i> Sent</span>
+              <strong>{{ stats.get('Sent', 0) }}</strong>
+          </div>
+          <div class="stat-item stat-replied">
+              <span><i data-feather="inbox"></i> Replied</span>
+              <strong>{{ stats.get('Replied', 0) }}</strong>
+          </div>
+          <div class="stat-item stat-failed">
+              <span><i data-feather="x-circle"></i> Failed</span>
+              <strong>{{ stats.get('Failed', 0) }}</strong>
+          </div>
+          <div class="stat-item stat-mono-sent">
+              <span><i data-feather="mail"></i> Mono Sent</span>
+              <strong>{{ stats.get('Mono Sent', 0) }}</strong>
+          </div>
+          <div class="stat-item stat-mono-failed">
+              <span><i data-feather="x-octagon"></i> Mono Failed</span>
+              <strong>{{ stats.get('Mono Failed', 0) }}</strong>
+          </div>
+          <div class="stat-item stat-mono-sent">
+              <span><i data-feather="send"></i> F-up Mono Sent</span>
+              <strong>{{ stats.get('Follow-up Mono Sent', 0) }}</strong>
+          </div>
+          <div class="stat-item stat-mono-failed">
+              <span><i data-feather="alert-triangle"></i> F-up Mono Failed</span>
+              <strong>{{ stats.get('Follow-up Mono Failed', 0) }}</strong>
+          </div>
+        </div>
+      </div>
+      <div class="detailed-stats">
+        <h4>About Initial Campaign History</h4>
+        <p>This chart summarizes the lifetime results of all initial outreach emails sent, including both scheduled campaigns and one-off "Mono Mails". It provides a high-level overview of your entire acquisition effort since the beginning.</p>
+      </div>
+    </div>
+
+    <!-- 3. Daily Activity -->
+    <div class="status-card chart-card expandable">
+      <div class="card-header-flex">
+        <h3>Daily Activity (Last 7 Days)</h3>
+        <i data-feather="maximize-2" class="expand-icon"></i>
+      </div>
+      <div class="chart-container">
+        <canvas id="activityChart"></canvas>
+      </div>
+      <div class="detailed-stats">
+        <h4>About Daily Activity</h4>
+        <p>This chart visualizes the volume of campaign activities (Sent, Failed, Replied) over the last 7 days. It helps you identify trends, monitor campaign consistency, and see the immediate impact of your outreach efforts on a day-by-day basis.</p>
+      </div>
+    </div>
+
+    <!-- 4. Mono Mail History -->
+    <div class="status-card chart-card expandable" id="mono-history-card">
+      <div class="card-header-flex">
+        <h3>Mono Mail History</h3>
+        <button id="refresh-charts-btn" class="btn-icon" title="Refresh Charts">
+          <i data-feather="refresh-cw"></i>
+        </button>
+        <i data-feather="maximize-2" class="expand-icon"></i>
+      </div>
+      <div class="chart-container" style="height: 220px; padding-top: 1rem;">
+        <canvas id="monoHistoryChart"></canvas>
+      </div>
+      <div class="detailed-stats">
+        <h4>About Mono Mail</h4>
+        <p><strong>Mono Mail</strong> refers to one-off emails sent manually from the dashboards, outside of any automated or bulk campaign. This chart tracks the performance of these individual outreach attempts.</p>
+        <p><strong>Initial Mono Mail</strong> is the first one-off email sent to a contact, while <strong>Follow-up Mono Mail</strong> is a subsequent manual follow-up.</p>
+      </div>
+    </div>
+
+    <!-- 5. Follow-up History -->
+    <div class="status-card chart-card expandable" id="follow-up-history-card">
+      <div class="card-header-flex">
+        <h3>Follow-up History</h3>
+        <i data-feather="maximize-2" class="expand-icon"></i>
+      </div>
+      <div class="chart-container" style="height: 220px; padding-top: 1rem;">
+        <canvas id="followUpHistoryChart"></canvas>
+      </div>
+      <div class="detailed-stats">
+        <h4>About Follow-up History</h4>
+        <p>This chart tracks the performance of all follow-up emails, including those sent via the automated sequence and those sent manually from the "Follow-up" page. It helps you understand the effectiveness of your subsequent messages in re-engaging contacts.</p>
+      </div>
+    </div>
+
+    <!-- 6. Reply Rate Over Time -->
+    <div class="status-card chart-card expandable">
+      <div class="card-header-flex">
+        <h3>Reply Rate Over Time</h3>
+        <i data-feather="maximize-2" class="expand-icon"></i>
+      </div>
+      <div class="chart-container" style="height: 220px;">
+        <canvas id="replyRateChart"></canvas>
+      </div>
+      <div class="detailed-stats">
+        <h4>About Reply Rate</h4>
+        <p>This chart shows the trend of your daily reply rate over the last 30 days. The reply rate is calculated as <strong>(Replied Emails / Sent Emails) * 100</strong> for each day.</p>
+        <p>It is a key indicator of your email content's effectiveness and your audience's engagement level. A rising trend is a positive sign, while a dip might suggest a need to revise your templates or targeting.</p>
+      </div>
+    </div>
+
+    <!-- 7. Daily Sent Mail Count -->
+    <div class="status-card chart-card expandable">
+      <div class="card-header-flex">
+        <h3>Daily Mails Sent</h3>
+        <i data-feather="maximize-2" class="expand-icon"></i>
+      </div>
+      <div class="chart-container">
+        <canvas id="dailySentChart"></canvas>
+      </div>
+      <div class="detailed-stats">
+        <h4>About Daily Sent Mails</h4>
+        <p>This chart shows the total number of emails sent per day, including initial outreach, mono mails, and all follow-ups. It provides a simple count of your daily sending volume.</p>
+      </div>
+    </div>
+
+    <!-- 8 & 9. Recent Logs & Reporting -->
+    <div class="status-card">
+      <h3>Recent Logs</h3>
+      <div class="log-viewer" style="height: 250px;">
+        <pre><code>{{ logs }}</code></pre>
+      </div>
+      <div class="log-section-in-card">
+          <h3>Reporting</h3>
+          <a href="{{ url_for('report') }}" class="btn-primary" style="width: 100%;"><i data-feather="file-text"></i> View Full Report</a>
+      </div>
+    </div>
+</div>
+
+<!-- Clear All Data Modal -->
+<div id="clear-modal" class="modal-overlay" style="display: none;">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3><i data-feather="alert-triangle"></i> Confirm Remove Dataset</h3>
+      <button type="button" class="modal-close" aria-label="Close modal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p>Are you sure you want to remove the current dataset?</p>
+      <p class="modal-warning-text">This will permanently delete the uploaded file and all associated campaign data, including contacts and progress. <strong>This action cannot be undone.</strong></p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-secondary modal-cancel">Cancel</button>
+      <form id="clear-campaign-form" method="POST" action="{{ url_for('clear_campaign') }}" style="margin: 0;">
+        <button type="button" id="confirm-clear-btn" class="btn-danger">Yes, Remove Dataset</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<style>
+  .history-filter-card {
+    background: var(--bg-light);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  body.dark .history-filter-card {
+    background: var(--card-bg-dark);
+    border-color: var(--border-dark);
+  }
+  .history-filter-form {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .filter-title {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+  .history-filter-form input[type="date"] {
+    background-color: var(--bg-gray);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--text-color);
+    font-family: inherit;
+    font-size: 0.95rem;
+  }
+  body.dark .history-filter-form input[type="date"] {
+    background-color: var(--input-bg-dark);
+    border-color: var(--border-dark);
+    color: var(--text-color-dark);
+  }
+  .chart-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    opacity: 0; /* Initially hidden for animation */
+    transform: translateY(30px);
+  }
+  .chart-card:hover {
+    transform: translateY(-5px) scale(1.01);
+    box-shadow: 0 20px 40px -15px rgba(0,0,0,0.1);
+  }
+  body.dark .chart-card:hover {
+    box-shadow: 0 20px 40px -15px rgba(255, 98, 31, 0.1);
+  }
+  .chart-card .detailed-stats {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease-in-out, padding-top 0.5s ease-in-out, margin-top 0.5s ease-in-out;
+    padding-top: 0;
+    margin-top: 0;
+    border-top: 1px solid transparent;
+    transition-delay: 0.1s;
+  }
+  .chart-card.expanded .detailed-stats {
+    max-height: 500px; /* Adjust as needed */
+    padding-top: 1.5rem;
+    margin-top: 1.5rem;
+    border-top-color: var(--border-light);
+  }
+  body.dark .chart-card.expanded .detailed-stats {
+    border-top-color: var(--border-dark);
+  }
+  .refresh-charts-btn.is-loading i {
+    animation: spin 1.5s linear infinite;
+  }
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  let scheduledHistoryChart = null;
+  let followUpHistoryChart = null;
+  let monoHistoryChart = null;
+  let currentCampaignChart = null;
+  let activityChart = null;
+  let replyRateChart = null;
+  let dailySentChart = null;
+
+  // --- Define Unique Color Palettes for Each Chart ---
+
+  const currentCampaignColors = {
+    'Sent': 'rgba(40, 167, 69, 0.7)',
+    'Replied': 'rgba(23, 162, 184, 0.7)',
+    'Failed': 'rgba(220, 53, 69, 0.7)',
+    'We Have Detailers': 'rgba(214, 90, 49, 0.7)',
+    'Try Later': 'rgba(135, 140, 145, 0.7)',
+    'Send Your details': 'rgba(0, 123, 255, 0.7)',
+    'Left a voicemail': 'rgba(25, 135, 84, 0.7)',
+    'Number No Longer Available': 'rgba(111, 66, 193, 0.7)',
+    'Default': 'rgba(108, 117, 125, 0.7)'
+  };
+
+  const scheduledHistoryColors = {
+    'Sent': 'rgba(255, 98, 31, 0.8)',      // Primary Orange
+    'Replied': 'rgba(255, 120, 78, 0.8)',   // Lighter Orange
+    'Failed': 'rgba(214, 90, 49, 0.8)',    // Darker Orange
+    'Pending': 'rgba(255, 193, 7, 0.8)',   // Yellow (Kept for contrast)
+    'Default': 'rgba(108, 117, 125, 0.8)'  // Grey
+  };
+
+  // New color palette for the detailed history chart
+  const detailedHistoryColors = { // A more diverse and distinct color palette
+    'Sent': 'rgba(40, 167, 69, 0.8)',      // Success Green
+    'Replied': 'rgba(23, 162, 184, 0.8)',   // Info Blue/Teal
+    'Failed': 'rgba(220, 53, 69, 0.8)',    // Danger Red
+    'Pending': 'rgba(255, 193, 7, 0.8)',   // Warning Yellow
+    'Mono Sent': 'rgba(102, 16, 242, 0.75)', // Vibrant Purple
+    'Mono Failed': 'rgba(199, 0, 57, 0.75)',   // Crimson Red
+    'F-up Mono Sent': 'rgba(0, 123, 255, 0.75)', // Standard Blue
+    'F-up Mono Failed': 'rgba(214, 90, 49, 0.75)',  // Orange-Red
+    'Default': 'rgba(108, 117, 125, 0.7)'   // Grey
+  };
+
+  const followUpHistoryColors = {
+    'Follow-up Sent': 'rgba(25, 135, 84, 0.8)',   // Darker Green
+    'Follow-up Failed': 'rgba(214, 90, 49, 0.8)', // Orange-Red
+    'Default': 'rgba(108, 117, 125, 0.7)'
+  };
+
+  function getFilterParams() {
+    const startDate = document.getElementById('chart_start_date').value;
+    const endDate = document.getElementById('chart_end_date').value;
+    const params = new URLSearchParams();
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    return params.toString();
+  }
+
+  function updateScheduledHistoryChart() {
+    // This function now uses the pre-loaded 'stats' object from the template
+    // instead of fetching from an API.
+    return new Promise((resolve, reject) => {
+        // Always include the main statuses, even if they are 0, to ensure the chart renders.
+        const statsData = {
+            'Sent': {{ stats.get('Sent', 0) | default(0) }},
+            'Replied': {{ stats.get('Replied', 0) | default(0) }},
+            'Failed': {{ stats.get('Failed', 0) | default(0) }},
+            'Pending': {{ stats.get('Pending', 0) | default(0) }},
+            'Mono Sent': {{ stats.get('Mono Sent', 0) | default(0) }},
+            'Mono Failed': {{ stats.get('Mono Failed', 0) | default(0) }},
+            'F-up Mono Sent': {{ stats.get('Follow-up Mono Sent', 0) | default(0) }},
+            'F-up Mono Failed': {{ stats.get('Follow-up Mono Failed', 0) | default(0) }}
+        };
+        // Only filter out zero-value items if there's at least one non-zero item to display.
+        const hasData = Object.values(statsData).some(v => v > 0);
+        const data = hasData ? Object.fromEntries(Object.entries(statsData).filter(([_, v]) => v > 0)) : { 'No Data': 1 };
+        const labels = Object.keys(data);
+        const values = Object.values(data);
+        const backgroundColors = labels.map(label => detailedHistoryColors[label] || detailedHistoryColors['Default']);
+        const isDark = document.body.classList.contains('dark');
+        const labelColor = isDark ? '#f1f1f5' : '#2e2e2e';
+
+        if (scheduledHistoryChart) {
+          scheduledHistoryChart.data.labels = labels;
+          scheduledHistoryChart.data.datasets[0].data = values;
+          scheduledHistoryChart.data.datasets[0].backgroundColor = backgroundColors;
+          scheduledHistoryChart.update();
+        } else {
+          const ctx = document.getElementById('scheduledHistoryChart').getContext('2d');
+          scheduledHistoryChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: 'Email Status',
+                data: values,
+                backgroundColor: backgroundColors,
+                borderColor: isDark ? '#1a1b24' : '#fff',
+                borderWidth: 2,
+                hoverBorderColor: isDark ? '#f1f1f5' : '#fff',
+                hoverBorderWidth: 3,
+                hoverOffset: 20,
+                hoverOffset: 15,
+                cutout: '60%'
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              onHover: (event, chartElement) => {
+                event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+              },
+              animation: {
+                animateScale: true,
+              },
+              plugins: {
+                legend: {
+                  position: 'top',
+                  labels: { color: labelColor }
+                },
+                tooltip: {
+                  enabled: true,
+                  backgroundColor: isDark ? '#1a1b24' : '#fff',
+                  titleColor: labelColor,
+                  bodyColor: labelColor,
+                  borderColor: 'rgba(255, 98, 31, 0.5)',
+                  borderWidth: 1,
+                  padding: 12,
+                  cornerRadius: 8,
+                  displayColors: false,
+                  callbacks: {
+                    label: function(context) {
+                      let label = context.label || '';
+                      if (label) { label += ': '; }
+                      if (context.parsed !== null) { label += context.parsed; }
+                      return label;
+                    }
+                  }
+                }
+              }
+            }
+          });
+        }
+        resolve();
+    });
+  }
+
+  function updateFollowUpHistoryChart() {
+    return fetch(`{{ url_for('api_follow_up_stats') }}?${getFilterParams()}`)
+      .then(response => response.json())
+      .then(data => {
+        const labels = Object.keys(data);
+        const values = Object.values(data);
+        const backgroundColors = labels.map(label => followUpHistoryColors[label] || followUpHistoryColors['Default']);
+        const isDark = document.body.classList.contains('dark');
+        const labelColor = isDark ? '#f1f1f5' : '#2e2e2e';
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+
+        if (followUpHistoryChart) {
+          followUpHistoryChart.data.labels = labels;
+          followUpHistoryChart.data.datasets[0].data = values;
+          followUpHistoryChart.data.datasets[0].backgroundColor = backgroundColors;
+          followUpHistoryChart.update();
+        } else {
+          const ctx = document.getElementById('followUpHistoryChart').getContext('2d');
+          followUpHistoryChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: 'Count',
+                data: values,
+                backgroundColor: backgroundColors,
+                borderWidth: 1,
+                hoverBorderWidth: 2,
+                borderRadius: 4,
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              indexAxis: 'y',
+              plugins: {
+                animation: {
+                  duration: 500,
+                },
+                legend: { display: false },
+                tooltip: {
+                  enabled: true,
+                  backgroundColor: isDark ? '#1a1b24' : '#fff',
+                  titleColor: labelColor,
+                  bodyColor: labelColor,
+                  borderColor: 'rgba(255, 98, 31, 0.5)',
+                  padding: 10,
+                  caretSize: 6,
+                  cornerRadius: 8,
+                  callbacks: {
+                    label: function(context) {
+                      let label = context.label || '';
+                      if (label) { label += ': '; }
+                      if (context.parsed !== null) { label += context.parsed; }
+                      return label;
+                    }
+                  }
+                }
+              }
+            }
+          });
+        }
+      });
+  }
+
+  const monoHistoryColors = {
+    'Initial Mono Sent': 'rgba(102, 16, 242, 0.7)',
+    'Initial Mono Failed': 'rgba(199, 0, 57, 0.7)',
+    'Follow-up Mono Sent': 'rgba(0, 123, 255, 0.7)',
+    'Follow-up Mono Failed': 'rgba(214, 90, 49, 0.7)',
+    'Default': 'rgba(108, 117, 125, 0.7)'
+  };
+
+
+
+
+  function updateMonoHistoryChart() {
+    return fetch(`{{ url_for('api_mono_stats') }}?${getFilterParams()}`)
+      .then(response => response.json())
+      .then(data => {
+        const labels = Object.keys(data);
+        const values = Object.values(data);
+        const backgroundColors = labels.map(label => monoHistoryColors[label] || monoHistoryColors['Default']);
+        const isDark = document.body.classList.contains('dark');
+        const labelColor = isDark ? '#f1f1f5' : '#2e2e2e';
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+
+        if (monoHistoryChart) {
+          monoHistoryChart.data.labels = labels;
+          monoHistoryChart.data.datasets[0].data = values;
+          monoHistoryChart.data.datasets[0].backgroundColor = backgroundColors;
+          monoHistoryChart.update();
+        } else {
+          const ctx = document.getElementById('monoHistoryChart').getContext('2d');
+          monoHistoryChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: 'Count',
+                data: values,
+                backgroundColor: backgroundColors,
+                borderColor: backgroundColors,
+                borderWidth: 1,
+                borderRadius: 4,
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: {
+                duration: 500,
+              },
+              indexAxis: 'y', // Horizontal bar chart
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                  enabled: true,
+                  backgroundColor: isDark ? '#1a1b24' : '#fff',
+                  titleColor: labelColor,
+                  bodyColor: labelColor,
+                  padding: 12,
+                  cornerRadius: 8,
+                  displayColors: false,
+                  borderColor: 'rgba(255, 98, 31, 0.5)',
+                  callbacks: {
+                    label: function(context) {
+                      return ` ${context.label}: ${context.raw}`;
+                    }
+                  }
+                }
+              },
+              scales: {
+                x: {
+                  beginAtZero: true,
+                  ticks: { color: labelColor, precision: 0 },
+                  grid: { color: gridColor }
+                },
+                y: {
+                  ticks: { color: labelColor },
+                  grid: { display: false }
+                }
+              }
+            }
+          });
+        }
+      });
+  }
+
+
+  function updateCurrentCampaignChart() {
+    return fetch("{{ url_for('api_current_campaign_stats') }}")
+      .then(response => response.json())
+      .then(data => {
+        const labels = Object.keys(data);
+        const values = Object.values(data);
+        const backgroundColors = labels.map(label => currentCampaignColors[label] || currentCampaignColors['Default']);
+        const isDark = document.body.classList.contains('dark');
+        const labelColor = isDark ? '#f1f1f5' : '#2e2e2e'; 
+
+        // Animate the summary stats
+        const todayStatsContainer = document.getElementById('today-stats-summary');
+        if (todayStatsContainer) {
+            let totalProcessed = 0;
+            labels.forEach((label, index) => {
+                const statEl = todayStatsContainer.querySelector(`strong[data-stat="${label}"]`);
+                if (statEl) {
+                    gsap.fromTo(statEl, { innerText: 0 }, { innerText: values[index], duration: 1, ease: 'power2.out', snap: { innerText: 1 } });
+                }
+                if (['Sent', 'Failed', 'Replied'].includes(label)) totalProcessed += values[index];
+            });
+            const totalEl = todayStatsContainer.querySelector('strong[data-stat="Total"]');
+            if (totalEl) gsap.fromTo(totalEl, { innerText: 0 }, { innerText: totalProcessed, duration: 1, ease: 'power2.out', snap: { innerText: 1 } });
+        }
+
+        if (currentCampaignChart) {
+          currentCampaignChart.data.labels = labels;
+          currentCampaignChart.data.datasets[0].data = values;
+          currentCampaignChart.data.datasets[0].backgroundColor = backgroundColors;
+          currentCampaignChart.update();
+        } else {
+          const ctx = document.getElementById('currentCampaignChart').getContext('2d');
+          currentCampaignChart = new Chart(ctx, {
+            type: 'pie', // Changed from doughnut to pie
+            data: {
+              labels: labels,
+              datasets: [{
+                label: 'Status',
+                data: values,
+                backgroundColor: backgroundColors,
+                borderColor: isDark ? '#1a1b24' : '#fff',
+                borderWidth: 2,
+                hoverOffset: 10
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: {
+                animateRotate: true,
+                animateScale: true
+              },
+              plugins: {
+                legend: {
+                    position: 'top',
+                    labels: { color: labelColor },
+                    
+                },
+                tooltip: {
+                  enabled: true,
+                  backgroundColor: isDark ? '#1a1b24' : '#fff',
+                  titleColor: labelColor,
+                  bodyColor: labelColor,
+                  padding: 12,
+                  cornerRadius: 8,
+                  displayColors: false,
+                  borderColor: 'rgba(255, 98, 31, 0.5)',
+                  callbacks: {
+                    label: function(context) {
+                      return ` ${context.label}: ${context.raw}`;
+                    }
+                  }
+                }
+              },
+            }
+          });
+        }
+      });
+  }
+
+  function updateActivityChart() {
+    const activityCtx = document.getElementById('activityChart');
+    if (!activityCtx) return Promise.resolve();
+
+    return fetch("{{ url_for('api_activity_over_time') }}")
+      .then(response => response.json())
+      .then(data => {
+        const isDark = document.body.classList.contains('dark');
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+        const labelColor = isDark ? '#f1f1f5' : '#2e2e2e';
+
+        data.datasets.forEach(dataset => {
+            dataset.borderColor = isDark ? '#1a1b24' : '#fff';
+            dataset.borderWidth = 2;
+        });
+
+        if (activityChart) {
+          activityChart.data.labels = data.labels;
+          activityChart.data.datasets.forEach((dataset, i) => {
+            dataset.data = data.datasets[i].data;
+            dataset.backgroundColor = data.datasets[i].backgroundColor;
+          });
+          activityChart.update();
+        } else {
+          activityChart = new Chart(activityCtx.getContext('2d'), {
+            type: 'bar',
+            data: data,
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: {
+                tension: { duration: 1000, from: 1, to: 0, loop: false }
+              },
+              plugins: {
+                legend: {
+                  position: 'top',
+                  labels: { color: labelColor }
+                },
+                tooltip: {
+                  backgroundColor: isDark ? '#1a1b24' : '#fff',
+                  titleColor: labelColor,
+                  bodyColor: labelColor,
+                  padding: 12,
+                  cornerRadius: 8,
+                  displayColors: false,
+                  borderColor: 'rgba(255, 98, 31, 0.5)',
+                  borderWidth: 1,
+                  padding: 10,
+                  cornerRadius: 8,
+                }
+              },
+              scales: {
+                x: {
+                  stacked: true,
+                  ticks: { color: labelColor },
+                  grid: { display: false }
+                },
+                y: {
+                  stacked: true,
+                  beginAtZero: true,
+                  ticks: {
+                    color: labelColor,
+                    callback: function(value) { if (Number.isInteger(value)) { return value; } }
+                  },
+                  grid: { color: gridColor }
+                }
+              }
+            }
+          });
+        }
+      });
+  }
+
+  function updateReplyRateChart() {
+    // This chart can have its own API endpoint that doesn't need date filters
+    // as it's always showing a "last X days" trend.
+    const replyRateCtx = document.getElementById('replyRateChart');
+    if (!replyRateCtx) return Promise.resolve();
+
+    return fetch("{{ url_for('api_activity_over_time') }}") // Re-using this endpoint
+      .then(response => response.json())
+      .then(data => {
+        const isDark = document.body.classList.contains('dark');
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+        const labelColor = isDark ? '#f1f1f5' : '#2e2e2e';
+
+        // Calculate reply rate: (replies / sent) * 100
+        const replyRates = data.labels.map((_, i) => {
+            const sent = data.datasets.find(d => d.label === 'Sent').data[i];
+            const replied = data.datasets.find(d => d.label === 'Replied').data[i];
+            return sent > 0 ? (replied / sent) * 100 : 0;
+        });
+
+        const chartData = {
+            labels: data.labels,
+            datasets: [{
+                label: 'Reply Rate (%)',
+                data: replyRates,
+                borderColor: currentCampaignColors['Replied'],
+                backgroundColor: 'rgba(23, 162, 184, 0.2)',
+                fill: true,
+                tension: 0.4,
+            }]
+        };
+
+        if (replyRateChart) {
+            replyRateChart.data = chartData;
+            replyRateChart.update();
+        } else {
+            replyRateChart = new Chart(replyRateCtx.getContext('2d'), {
+                type: 'line',
+                data: chartData,
+                options: {
+                    animation: {
+                      tension: { duration: 1000, from: 0.5, to: 0.2, loop: false }
+                    },
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { color: labelColor }, grid: { display: false } },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: labelColor,
+                                callback: value => `${value}%`
+                            },
+                            grid: { color: gridColor }
+                        }
+                    }
+                }
+            });
+        }
+      });
+  }
+
+  function updateDailySentChart() {
+    const dailySentCtx = document.getElementById('dailySentChart');
+    if (!dailySentCtx) return Promise.resolve();
+
+    return fetch(`{{ url_for('api_daily_sent_count') }}?${getFilterParams()}`)
+      .then(response => response.json())
+      .then(data => {
+        const isDark = document.body.classList.contains('dark');
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+        const labelColor = isDark ? '#f1f1f5' : '#2e2e2e';
+
+        const chartData = {
+            labels: data.labels,
+            datasets: [{
+                label: 'Mails Sent',
+                data: data.data,
+                backgroundColor: 'rgba(255, 98, 31, 0.6)',
+                borderColor: 'rgba(255, 98, 31, 1)',
+                borderWidth: 2,
+                borderRadius: 4,
+            }]
+        };
+
+        if (dailySentChart) {
+            dailySentChart.data = chartData;
+            dailySentChart.update();
+        } else {
+            dailySentChart = new Chart(dailySentCtx.getContext('2d'), {
+                type: 'bar',
+                data: chartData,
+                options: {
+                    animation: { // Corrected animation 'from' value
+                      y: { duration: 1000, from: 0 }
+                    },
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: { ticks: { color: labelColor }, grid: { display: false } },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: labelColor,
+                                precision: 0
+                            },
+                            grid: { color: gridColor }
+                        }
+                    }
+                }
+            });
+        }
+      });
+  }
+
+
+  // Initial Load
+  updateScheduledHistoryChart();
+  updateFollowUpHistoryChart();
+  updateMonoHistoryChart();
+  updateCurrentCampaignChart();
+  updateActivityChart();
+  updateReplyRateChart();
+  updateDailySentChart();
+    // Set up interval to refresh charts periodically (e.g., every 60 seconds)
+  setInterval(() => refreshBtn.click(), 60000);
+
+    // Auto-scroll log viewer to the bottom
+  const logViewer = document.querySelector('.log-viewer');
+  if (logViewer) {
+    logViewer.scrollTop = logViewer.scrollHeight;
+  }
+
+  // Refresh Button Logic
+  const refreshBtn = document.getElementById('refresh-charts-btn');
+  refreshBtn.addEventListener('click', () => {
+    refreshBtn.classList.add('is-loading');
+    refreshBtn.disabled = true;
+    
+    // The date filter only applies to the history charts
+    Promise.all([
+        updateScheduledHistoryChart(), 
+        updateFollowUpHistoryChart(), 
+        updateMonoHistoryChart(), 
+        updateCurrentCampaignChart(), 
+        updateActivityChart(),
+        updateReplyRateChart(),
+        updateDailySentChart()
+    ])
+      .catch(error => showFlashMessage('Could not refresh chart data.', 'danger'))
+      .finally(() => setTimeout(() => {
+        refreshBtn.classList.remove('is-loading');
+        refreshBtn.disabled = false;
+        feather.replace(); // Redraw icons
+      }, 500));
+  });
+
+  // Date Filter Form Logic
+  const filterForm = document.getElementById('history-chart-filter-form');
+  filterForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      refreshBtn.click(); // Trigger a refresh with the new date params
+  });
+  filterForm.addEventListener('reset', (e) => {
+      // Use a timeout to allow the form fields to clear before re-fetching data
+      setTimeout(() => {
+          refreshBtn.click();
+      }, 10);
+  });
+
+  // --- Expandable Chart Logic ---
+  document.querySelectorAll('.chart-card.expandable').forEach(card => {
+    const header = card.querySelector('.card-header-flex');
+    header.style.cursor = 'pointer';
+    header.addEventListener('click', function(event) {
+      const isExpanded = this.classList.contains('expanded');
+
+      // Collapse any other expanded card first
+      document.querySelectorAll('.chart-card.expanded').forEach(expandedCard => {
+        if (expandedCard !== this) {
+          expandedCard.classList.remove('expanded');
+          const otherIcon = expandedCard.querySelector('.expand-icon');
+          if (otherIcon) otherIcon.setAttribute('data-feather', 'maximize-2');
+        }
+      });
+
+      // Toggle the clicked card
+      this.classList.toggle('expanded');
+      const icon = this.querySelector('.expand-icon');
+      if (icon) {
+        icon.setAttribute('data-feather', this.classList.contains('expanded') ? 'minimize-2' : 'maximize-2');
+      }
+      feather.replace();
+    });
+  });
+
+  document.addEventListener('themeChanged', function(e) {
+    if (scheduledHistoryChart) {
+      const isDark = e.detail.isDark;
+      scheduledHistoryChart.options.plugins.legend.labels.color = isDark ? '#f1f1f5' : '#2e2e2e';
+      if (scheduledHistoryChart.options.plugins.tooltip) {
+        scheduledHistoryChart.options.plugins.tooltip.backgroundColor = isDark ? '#1a1b24' : '#fff';
+        scheduledHistoryChart.options.plugins.tooltip.titleColor = isDark ? '#f1f1f5' : '#2e2e2e';
+        scheduledHistoryChart.options.plugins.tooltip.bodyColor = isDark ? '#f1f1f5' : '#2e2e2e';
+      }
+      scheduledHistoryChart.data.datasets[0].borderColor = isDark ? '#1a1b24' : '#fff';
+      scheduledHistoryChart.data.datasets[0].hoverBorderColor = isDark ? '#f1f1f5' : '#fff';
+      scheduledHistoryChart.update();
+    }
+
+    if (followUpHistoryChart) {
+      const isDark = e.detail.isDark;
+      const labelColor = isDark ? '#f1f1f5' : '#2e2e2e';
+      const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+      if (followUpHistoryChart.options.plugins.tooltip) {
+        followUpHistoryChart.options.plugins.tooltip.backgroundColor = isDark ? '#1a1b24' : '#fff';
+        followUpHistoryChart.options.plugins.tooltip.titleColor = labelColor;
+        followUpHistoryChart.options.plugins.tooltip.bodyColor = labelColor;
+      }
+      followUpHistoryChart.options.scales.x.ticks.color = labelColor;
+      followUpHistoryChart.options.scales.x.grid.color = gridColor;
+      followUpHistoryChart.options.scales.y.ticks.color = labelColor;
+      followUpHistoryChart.update();
+    }
+
+    if (monoHistoryChart) {
+        const isDark = e.detail.isDark;
+        const labelColor = isDark ? '#f1f1f5' : '#2e2e2e';
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+        if (monoHistoryChart.options.plugins.tooltip) {
+            monoHistoryChart.options.plugins.tooltip.backgroundColor = isDark ? '#1a1b24' : '#fff';
+            monoHistoryChart.options.plugins.tooltip.titleColor = labelColor;
+            monoHistoryChart.options.plugins.tooltip.bodyColor = labelColor;
+        }
+        monoHistoryChart.options.scales.x.ticks.color = labelColor;
+        monoHistoryChart.options.scales.x.grid.color = gridColor;
+        monoHistoryChart.options.scales.y.ticks.color = labelColor;
+        monoHistoryChart.update();
+    }
+    
+    if (currentCampaignChart) {
+      const isDark = e.detail.isDark;
+      const labelColor = isDark ? '#f1f1f5' : '#2e2e2e';
+      const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+      currentCampaignChart.options.plugins.legend.labels.color = labelColor;
+      currentCampaignChart.options.plugins.tooltip.backgroundColor = isDark ? '#1a1b24' : '#fff';
+      currentCampaignChart.options.plugins.tooltip.titleColor = labelColor;
+      currentCampaignChart.options.plugins.tooltip.bodyColor = labelColor;
+      currentCampaignChart.update();
+    }
+
+
+
+    if (activityChart) {
+        const isDark = e.detail.isDark;
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+        const labelColor = isDark ? '#f1f1f5' : '#2e2e2e';
+
+        activityChart.options.plugins.legend.labels.color = labelColor;
+        if (activityChart.options.plugins.tooltip) {
+            activityChart.options.plugins.tooltip.backgroundColor = isDark ? '#1a1b24' : '#fff';
+            activityChart.options.plugins.tooltip.titleColor = labelColor;
+            activityChart.options.plugins.tooltip.bodyColor = labelColor;
+        }
+        activityChart.options.scales.x.ticks.color = labelColor;
+        activityChart.options.scales.y.ticks.color = labelColor;
+        activityChart.options.scales.y.grid.color = gridColor;
+        activityChart.data.datasets.forEach(dataset => {
+            dataset.borderColor = isDark ? '#1a1b24' : '#fff';
+        });
+        activityChart.update();
+    }
+  });
+  document.addEventListener('themeChanged', function(e) {
+    if (replyRateChart) {
+        const isDark = e.detail.isDark;
+        const labelColor = isDark ? '#f1f1f5' : '#2e2e2e';
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+        replyRateChart.options.scales.x.ticks.color = labelColor;
+        replyRateChart.options.scales.y.ticks.color = labelColor;
+        replyRateChart.options.scales.y.grid.color = gridColor;
+        if (replyRateChart.options.plugins.tooltip) {
+            replyRateChart.options.plugins.tooltip.backgroundColor = isDark ? '#1a1b24' : '#fff';
+            replyRateChart.options.plugins.tooltip.titleColor = labelColor;
+            replyRateChart.options.plugins.tooltip.bodyColor = labelColor;
+        }
+        replyRateChart.update();
+    }
+  }); // This was missing the closing parenthesis and brace
+  document.addEventListener('themeChanged', function(e) {
+    if (dailySentChart) {
+        const isDark = e.detail.isDark;
+        const labelColor = isDark ? '#f1f1f5' : '#2e2e2e';
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+        dailySentChart.options.scales.x.ticks.color = labelColor;
+        dailySentChart.options.scales.y.ticks.color = labelColor;
+        dailySentChart.options.scales.y.grid.color = gridColor;
+        if (dailySentChart.options.plugins.tooltip) {
+            dailySentChart.options.plugins.tooltip.backgroundColor = isDark ? '#1a1b24' : '#fff';
+            dailySentChart.options.plugins.tooltip.titleColor = labelColor;
+            dailySentChart.options.plugins.tooltip.bodyColor = labelColor;
+        }
+        dailySentChart.update();
+    }
+  });
+
+  // --- Staggered Entrance Animation for Cards ---
+  gsap.to(".chart-card", {
+    duration: 0.8,
+    autoAlpha: 1,
+    y: 0,
+    stagger: 0.1,
+    ease: "power3.out",
+    delay: 0.2
+  });
+
+  // Dynamic Content Loading & Accordion Rows
+  const dynamicContentContainer = document.getElementById('results-dynamic-content');
+
+  function attachAccordionListeners() {
+    dynamicContentContainer.addEventListener('click', function(event) {
+      const clickedRow = event.target.closest('.result-row');
+      if (!clickedRow) return;
+
+      const isAlreadyActive = clickedRow.classList.contains('active');
+
+      document.querySelectorAll('.result-row.active').forEach(activeRow => {
+        if (activeRow !== clickedRow) {
+          activeRow.classList.remove('active');
+          const detailsRow = document.querySelector(activeRow.dataset.detailsTarget);
+          if (detailsRow) {
+            const wrapper = detailsRow.querySelector('.details-wrapper');
+            if(wrapper) wrapper.style.maxHeight = null;
+          }
+        }
+      });
+
+      clickedRow.classList.toggle('active');
+      const targetId = clickedRow.dataset.detailsTarget;
+      const detailsRow = document.querySelector(targetId);
+      if (detailsRow) {
+        const wrapper = detailsRow.querySelector('.details-wrapper');
+        if (wrapper) {
+          if (clickedRow.classList.contains('active')) {
+            feather.replace();
+            wrapper.style.maxHeight = wrapper.scrollHeight + "px";
+          } else {
+            wrapper.style.maxHeight = null;
+          }
+        }
+      }
+    });
+  }
+
+  function initializeDynamicContent() {
+    if (typeof feather !== 'undefined') {
+      feather.replace();
+    }
+    // The single delegated listener is attached once, so we don't need to re-attach.
+  }
+
+  async function loadContent(url) {
+    try {
+      dynamicContentContainer.style.transition = 'opacity 0.3s ease';
+      dynamicContentContainer.style.opacity = '0.5';
+
+      const response = await fetch(url, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+
+      if (!response.ok) throw new Error(`Server error: ${response.statusText}`);
+
+      const html = await response.text();
+      history.pushState({}, '', url);
+      dynamicContentContainer.innerHTML = html;
+      initializeDynamicContent();
+
+    } catch (error) {
+      console.error('Failed to load dynamic content:', error);
+      window.location.href = url;
+    } finally {
+      dynamicContentContainer.style.opacity = '1';
+    }
+  }
+
+  dynamicContentContainer.addEventListener('click', function(event) {
+    const link = event.target.closest('a.filter-tab, a.page-link, a.clear-search');
+    if (link && link.href && !link.href.endsWith('#')) {
+      event.preventDefault();
+      loadContent(link.href);
+    }
+  });
+
+  dynamicContentContainer.addEventListener('submit', function(event) {
+    const form = event.target.closest('form.search-bar');
+    if (form) {
+      event.preventDefault();
+      const formData = new FormData(form);
+      const params = new URLSearchParams(formData);
+      const url = `${form.action}?${params.toString()}`;
+      loadContent(url);
+    }
+  });
+
+  attachAccordionListeners();
+  initializeDynamicContent();
+
+  // Resend Email Logic
+  dynamicContentContainer.addEventListener('click', function(event) {
+      const resendButton = event.target.closest('.btn-resend');
+      if (!resendButton) return;
+
+      event.preventDefault();
+      const contactId = resendButton.dataset.contactId;
+      const originalButtonHtml = resendButton.innerHTML;
+
+      resendButton.disabled = true;
+      resendButton.innerHTML = '<span class="spinner"></span> Queuing...';
+
+      fetch(`/api/resend/${contactId}`, {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest'
+          }
+      })
+      .then(response => response.json())
+      .then(data => {
+          if (data.success) {
+            showFlashMessage(data.message, 'success');
+            // Reload the partial to reflect all changes, which is more robust.
+            loadContent(window.location.href);
+          } else { throw new Error(data.error || 'An unknown error occurred.'); }
+      })
+      .catch(error => {
+          showFlashMessage(error.message, 'danger');
+          resendButton.disabled = false;
+          resendButton.innerHTML = originalButtonHtml;
+      });
+  });
+
+  // Manual Status Update Logic
+  dynamicContentContainer.addEventListener('click', function(event) {
+      const statusButton = event.target.closest('.btn-manual-status');
+      if (!statusButton) return;
+
+      event.preventDefault();
+      const contactId = statusButton.dataset.contactId;
+      const newStatus = statusButton.dataset.status;
+      const buttonGroup = statusButton.closest('.manual-status-buttons');
+      const originalButtonHtml = statusButton.innerHTML;
+
+      // Disable all buttons in the group to prevent multi-clicks
+      buttonGroup.querySelectorAll('button').forEach(btn => btn.disabled = true);
+      statusButton.innerHTML = '<span class="spinner"></span> Updating...';
+
+      fetch(`/api/contact/${contactId}/set_status`, {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: JSON.stringify({ status: newStatus })
+      })
+      .then(response => response.ok ? response.json() : response.json().then(err => { throw new Error(err.error || 'Server error') }))
+      .then(data => {
+          if (data.success) {
+              showFlashMessage(data.message, 'success');
+              // Reload the partial to reflect all changes (status, filters, etc.)
+              // This is simpler and more robust than updating multiple parts of the DOM manually.
+              loadContent(window.location.href);
+          } else { 
+              throw new Error(data.error || 'An unknown error occurred.'); 
+          }
+      })
+      .catch(error => {
+          showFlashMessage(error.message, 'danger');
+          // Re-enable buttons on failure
+          buttonGroup.querySelectorAll('button').forEach(btn => {
+            btn.disabled = false;
+          });
+          statusButton.innerHTML = originalButtonHtml;
+          feather.replace();
+      });
+  });
+
+  // Clear All Modal Logic
+  const clearModal = document.getElementById('clear-modal');
+  const openClearModalBtn = document.getElementById('open-clear-modal-btn');
+
+  if (clearModal && openClearModalBtn) {
+    const closeClearModalBtns = clearModal.querySelectorAll('.modal-close, .modal-cancel');
+    const confirmClearBtn = clearModal.querySelector('#confirm-clear-btn');
+    const clearForm = clearModal.querySelector('#clear-campaign-form');
+
+    openClearModalBtn.addEventListener('click', () => {
+      clearModal.style.display = 'flex';
+      feather.replace();
+    });
+
+    closeClearModalBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        clearModal.style.display = 'none';
+      });
+    });
+
+    if (clearForm && confirmClearBtn) {
+        confirmClearBtn.addEventListener('click', () => {
+          confirmClearBtn.disabled = true;
+          confirmClearBtn.classList.add('btn-removing');
+          confirmClearBtn.innerHTML = '<span class="btn-loader"></span> Removing Dataset';
+          clearForm.submit();
+        });
+    }
+  }
+
+  // --- Staggered Row Animation ---
+  function animateTableRows() {
+    const rows = document.querySelectorAll('.results-container tbody tr');
+    if (rows.length > 0) {
+      gsap.fromTo(rows, {
+        opacity: 0,
+        y: 20,
+      }, {
+        opacity: 1,
+        y: 0,
+        duration: 0.5,
+        ease: 'power3.out',
+        stagger: 0.07, // This creates the one-by-one effect
+      });
+    }
+  }
+
+  // Initial animation on page load
+  animateTableRows();
+
+  // Re-run animation when content is loaded via HTMX/AJAX
+  dynamicContentContainer.addEventListener('htmx:afterSwap', animateTableRows);
+
+});
+</script>
+{% endblock %}

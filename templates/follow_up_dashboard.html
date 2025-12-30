@@ -1,0 +1,499 @@
+{% extends "base.html" %}
+{% block title %}Follow-up Dashboard - Mail Merger{% endblock %}
+{% block body_class %}follow-up-page{% endblock %}
+{% block content %}
+<div class="dashboard-section" style="max-width: 1400px; margin: 2rem auto;">
+  <section class="status-card spotlight-card">
+    <div class="side-by-side-container">
+      <!-- Left Side: Upload & Progress -->
+      <div class="upload-section-styled">
+        <h2>Follow-up Campaign</h2>
+        <p>Upload a list of contacts to send manual or scheduled follow-up emails. These emails will be sent as replies to existing conversations if found.</p>
+        
+        <div class="upload-controls" style="display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; flex-wrap: wrap; margin-top: 1.5rem;">
+          <form method="POST" enctype="multipart/form-data" action="{{ url_for('follow_up_dashboard') }}" id="upload-form" style="display: flex; align-items: center; gap: 1rem;">
+            <label class="custom-file-upload">
+              <input type="file" name="file" id="file-input" accept=".csv,.xlsx" required />
+              <i data-feather="file-plus"></i>
+              <span>Choose File</span>
+            </label>
+            <span id="file-name">No file chosen</span>
+            <button type="submit" class="btn-primary" id="upload-btn">
+              <i data-feather="upload"></i> Upload
+            </button>
+          </form>
+            <form method="POST" action="{{ url_for('clear_follow_up_campaign') }}" id="clear-follow-up-form">
+              <button type="submit" class="btn-secondary btn-clear-all" id="followup-clear-btn">
+                <i data-feather="trash-2"></i> Remove Dataset
+              </button>
+            </form>
+        </div>
+
+        {% if total_contacts > 0 %}
+        <div class="progress-bar-container" style="margin-top: 2rem;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+            <span>Progress</span>
+            <span>{{ processed_count }} / {{ total_contacts }}</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-bar-fill" style="width: {{ (processed_count / total_contacts * 100) if total_contacts > 0 else 0 }}%;"></div>
+          </div>
+          {% if campaign_completed %}
+            <p class="status-text-success" style="text-align: center; margin-top: 1rem;">Campaign Completed!</p>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Right Side: Mono Mail & Campaign Controls -->
+      <div class="mono-mail-section">
+        <div class="collapsible-header" style="cursor: default;">
+          <div class="collapsible-title">
+            <h2>Campaign Actions</h2>
+            <p>Send a one-off email or manage the scheduled campaign.</p>
+          </div>
+        </div>
+        <div class="collapsible-content" style="grid-template-rows: 1fr; opacity: 1; padding-top: 1.5rem; margin-top: 1.5rem; border-top: 1px solid var(--border-light);">
+          <form method="POST" action="{{ url_for('send_manual_follow_up_mono') }}" id="mono-mail-form">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="mono-name">Name</label>
+                <input type="text" id="mono-name" name="name" placeholder="e.g., Jane Doe" required>
+              </div>
+              <div class="form-group">
+                <label for="mono-company">Company Name</label>
+                <input type="text" id="mono-company" name="company_name" placeholder="e.g., Innovate Inc.">
+              </div>
+              <div class="form-group">
+                <label for="mono-email">Email ID</label>
+                <input type="email" id="mono-email" name="email_id" placeholder="e.g., jane.doe@innovate.com" required>
+              </div>
+            </div>
+            <button type="submit" class="btn-primary"><i data-feather="send"></i> Send Mono Follow-up</button>
+          </form>
+          <div id="mono-mail-loader" style="display: none; text-align: center; padding: 2rem 0; min-height: 258px; justify-content: center; align-items: center; flex-direction: column;">
+              <div class="mono-spinner-loader">
+                  <svg class="spinner-ring" width="60" height="60">
+                     <circle class="spinner-ring__circle" stroke-width="5" fill="transparent" r="27" cx="30" cy="30"/>
+                  </svg>
+              </div>
+              <div class="mono-mail-success-icon" style="display: none;"><i data-feather="check-circle" style="width: 60px; height: 60px; color: var(--status-success);"></i></div>
+              <span id="mono-mail-status" style="display: block; margin-top: 1rem; font-size: 1rem; color: var(--text-muted);">Sending your email...</span>
+          </div>
+          
+          <!-- Campaign Controls Moved Here -->
+          <div class="campaign-controls" style="padding: 1.5rem 0 0; border-top: 1px solid var(--border-light); margin-top: 1.5rem;">
+            {% if scheduler_status.state == 'running' %}
+              <div class="control-form-group" style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+                <form method="POST" action="{{ url_for('stop_follow_up_campaign') }}" class="control-form">
+                  <button type="submit" class="btn-warning" aria-label="Pause Follow-up Campaign">
+                    <i data-feather="pause-circle"></i> Pause Scheduled
+                  </button>
+                </form>
+                <button type="button" id="send-remaining-btn" class="btn-primary"><i data-feather="chevrons-right"></i> Send All Remaining</button>
+              </div>
+              <p class="status-text">Scheduled campaign is running. Next email at: {{ scheduler_status.next_run }}</p>
+            {% elif scheduler_status.state == 'paused' %}
+              <div class="control-form-group" style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+                <form method="POST" action="{{ url_for('start_follow_up_campaign') }}" class="control-form">
+                  <button type="submit" class="btn-success" aria-label="Start Scheduled Follow-up Campaign">
+                    <i data-feather="play-circle"></i> Start Scheduled
+                  </button>
+                </form>
+                <form method="POST" action="{{ url_for('send_manual_follow_ups') }}" id="send-all-form" class="control-form">
+                  <button type="button" id="open-send-all-modal-btn" class="btn-primary"><i data-feather="zap"></i> Send All Immediately</button>
+                </form>
+              </div>
+              <p class="status-text">Choose how to send your follow-up emails.</p>
+            {% else %}
+              <p class="status-text-error">Follow-up scheduler job not found. Please check application logs.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="contact-previews-container dashboard-section" style="display: block; max-width: 1400px;">
+  <!-- Progress bar for "Send All Remaining" -->
+  <div id="send-remaining-progress-container" class="progress-section" style="display: none; margin-bottom: 2rem; padding: 1.5rem; background-color: var(--bg-gray); border-radius: 12px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h4 style="margin: 0;">Sending Remaining Follow-ups...</h4>
+        <span id="send-all-title" style="display:none;">Sending All Follow-ups...</span>
+        <button type="button" id="send-remaining-done-btn" class="btn-primary" style="display: none;">Done</button>
+      </div>
+      <div class="progress-bar-container">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;"><span id="progress-status-text-remaining">Initializing...</span><span id="progress-counter-remaining">0 / 0</span></div>
+          <div class="progress-bar"><div class="progress-bar-fill" id="send-remaining-progress-bar" style="width: 0%;"></div></div>
+      </div>
+  </div>
+
+  <!-- Tabbed Interface for Contacts -->
+  <div class="status-card spotlight-card" style="padding: 0;">
+    <div class="filter-tabs" style="padding: 0 1.5rem;">
+      <a href="#pending" class="filter-tab active" data-tab-target="#pending-contacts-table">Pending ({{ pending_contacts|length }})</a>
+      <a href="#processed" class="filter-tab" data-tab-target="#processed-contacts-table">Processed ({{ processed_contacts|length }})</a>
+    </div>
+    <div id="pending-contacts-table" class="tab-content active">
+  <div class="results-table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Index</th>
+          <th>Name</th>
+          <th>Email ID</th>
+          <th>Company Name</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for contact in pending_contacts %}
+        <tr data-index="{{ contact.index }}">
+          <td>{{ contact.index }}</td>
+          <td>{{ contact.name }}</td>
+          <td>{{ contact.email_id }}</td>
+          <td>{{ contact.company_name }}</td>
+          <td class="actions-cell">
+              <button class="btn-send-single" title="Send Single Follow-up">
+                  <i data-feather="send"></i>
+              </button>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5">No pending contacts.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+    </div>
+    <div id="processed-contacts-table" class="tab-content">
+    <div class="results-table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Index</th>
+            <th>Name</th>
+            <th>Email ID</th>
+            <th>Company Name</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for contact in processed_contacts %}
+          <tr data-index="{{ contact.index }}">
+            <td>{{ contact.index }}</td>
+            <td>{{ contact.name }}</td>
+            <td>{{ contact.email_id }}</td>
+            <td>{{ contact.company_name }}</td>
+            <td class="actions-cell">
+                <button class="btn-send-single" title="Send Single Follow-up">
+                    <i data-feather="send"></i>
+                </button>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5">No processed contacts yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    </div>
+  </div>
+</div>
+
+<!-- Send Single Follow-up Modal -->
+<div id="send-single-modal" class="modal-overlay" style="display: none;">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3><i data-feather="send"></i> Confirm Single Follow-up</h3>
+      <button type="button" class="modal-close" aria-label="Close modal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p>Are you sure you want to send a single follow-up email to <strong id="single-send-email-placeholder"></strong>?</p>
+      <p class="modal-warning-text">This action will send the email immediately.</p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-secondary modal-cancel">Cancel</button>
+      <button type="button" id="confirm-send-single-btn" class="btn-primary">Yes, Send Follow-up</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .tab-content {
+    display: none;
+    animation: contentFadeIn 0.4s ease-out;
+  }
+  .tab-content.active {
+    display: block;
+  }
+  .results-table-container {
+    padding: 1rem;
+  }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- Tab Switching Logic ---
+    const tabs = document.querySelectorAll('.filter-tab');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            e.preventDefault();
+            tabs.forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            tab.classList.add('active');
+            document.querySelector(tab.dataset.tabTarget).classList.add('active');
+        });
+    });
+
+    // File input name display
+    const fileInput = document.getElementById('file-input');
+    const fileName = document.getElementById('file-name');
+    if (fileInput && fileName) {
+      fileInput.addEventListener('change', () => {
+        fileName.textContent = fileInput.files.length ? fileInput.files[0].name : "No file chosen";
+      });
+    }
+
+    // Collapsible Section Logic
+    document.querySelectorAll('.collapsible-section').forEach(section => {
+        const header = section.querySelector('.collapsible-header');
+        header.addEventListener('click', () => {
+            section.classList.toggle('collapsed');
+        });
+    });
+
+    // --- Send Single Follow-up Modal & Logic ---
+    const sendSingleModal = document.getElementById('send-single-modal');
+    let activeSendButton = null; // To store the button that was clicked
+
+    if (sendSingleModal) {
+        const closeBtns = sendSingleModal.querySelectorAll('.modal-close, .modal-cancel');
+        const confirmBtn = document.getElementById('confirm-send-single-btn');
+
+        closeBtns.forEach(btn => btn.addEventListener('click', () => {
+            sendSingleModal.style.display = 'none';
+            activeSendButton = null;
+        }));
+
+        confirmBtn.addEventListener('click', () => {
+            if (!activeSendButton) return;
+
+            const row = activeSendButton.closest('tr');
+            const contactIndex = parseInt(row.dataset.index, 10);
+
+            activeSendButton.disabled = true;
+            activeSendButton.innerHTML = '<span class="spinner" style="width: 16px; height: 16px; border-width: 2px;"></span>';
+            sendSingleModal.style.display = 'none'; // Hide modal after confirming
+
+            fetch("{{ url_for('api_send_single_follow_up') }}", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ index: contactIndex }),
+            })
+            .then(response => response.ok ? response.json() : response.json().then(err => { throw new Error(err.error || 'Server error') }))
+            .then(data => {
+                if (data.success) {
+                    showFlashMessage(data.message, 'success');
+                    row.classList.add('row-updated');
+                } else { throw new Error(data.error); }
+            })
+            .catch(error => showFlashMessage('Error: ' + error.message, 'danger'))
+            .finally(() => {
+                activeSendButton.disabled = false;
+                activeSendButton.innerHTML = '<i data-feather="send"></i>';
+                feather.replace();
+                activeSendButton = null;
+            });
+        });
+    }
+
+    // --- Send Single Follow-up ---
+    document.querySelector('.contact-previews-container').addEventListener('click', (e) => {
+        const sendButton = e.target.closest('.btn-send-single');
+        if (!sendButton) return;
+
+        const row = sendButton.closest('tr');
+        const contactEmail = row.querySelector('td:nth-child(3)').innerText; // 3rd cell is email
+
+        activeSendButton = sendButton; // Store the clicked button
+        document.getElementById('single-send-email-placeholder').textContent = contactEmail;
+        sendSingleModal.style.display = 'flex';
+        feather.replace();
+    });
+
+
+    // "Send All Immediately" Logic
+    const openSendAllModalBtn = document.getElementById('open-send-all-modal-btn'); // Send All Immediately
+    const sendRemainingBtn = document.getElementById('send-remaining-btn');
+    const progressContainerRemaining = document.getElementById('send-remaining-progress-container');
+
+    if (progressContainerRemaining) {
+        const doneBtn = document.getElementById('send-remaining-done-btn');
+
+        doneBtn.addEventListener('click', () => window.location.reload());
+
+        const startBulkSend = async (button, endpoint, confirmationMessage, isSendAll = false) => {
+            if (!confirm(confirmationMessage)) {
+                return;
+            }
+
+            // Disable both buttons
+            if (sendRemainingBtn) sendRemainingBtn.disabled = true;
+            if (openSendAllModalBtn) openSendAllModalBtn.disabled = true;
+
+            // Show the correct title
+            const h4 = progressContainerRemaining.querySelector('h4');
+            const sendAllTitle = document.getElementById('send-all-title');
+            if (isSendAll) {
+                h4.style.display = 'none';
+                sendAllTitle.style.display = 'block';
+            } else {
+                h4.style.display = 'block';
+                sendAllTitle.style.display = 'none';
+            }
+
+            progressContainerRemaining.style.display = 'block';
+
+            const progressBar = document.getElementById('send-remaining-progress-bar');
+            const progressCounter = document.getElementById('progress-counter-remaining');
+            const progressStatusText = document.getElementById('progress-status-text-remaining');
+
+            const originalTitle = document.title;
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error || `Server responded with status ${response.status}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value, { stream: true });
+                    const jsonStrings = chunk.split('\n').filter(s => s.trim() !== '');
+
+                    for (const jsonString of jsonStrings) {
+                        try {
+                            const data = JSON.parse(jsonString);
+                            if (data.type === 'start') { progressCounter.textContent = `0 / ${data.total}`; }
+                            else if (data.type === 'progress') {
+                                const percent = (data.current / data.total) * 100;
+                                document.title = `(${Math.round(percent)}%) Sending...`;
+                                progressBar.style.width = `${percent}%`;
+                                progressCounter.textContent = `${data.current} / ${data.total}`;
+                                progressStatusText.textContent = `[${data.status.toUpperCase()}] Processing ${data.email}...` + (data.error ? ` - ${data.error}` : '');
+                            } else if (data.type === 'done') {
+                                progressStatusText.textContent = data.message;
+                                progressBar.style.width = '100%';
+                                document.title = "✅ Done! - " + originalTitle;
+                                progressBar.style.backgroundColor = 'var(--status-success)';
+                                doneBtn.style.display = 'inline-flex';
+                            } else if (data.type === 'error') { throw new Error(data.message); }
+                        } catch (e) { console.error("Error parsing JSON chunk: ", jsonString, e); }
+                    }
+                }
+            } catch (error) {
+                progressStatusText.textContent = 'An error occurred!';
+                progressStatusText.style.color = 'var(--danger-color)';
+                progressBar.style.backgroundColor = 'var(--danger-color)';
+                doneBtn.style.display = 'inline-flex';
+            } finally {
+                setTimeout(() => { if (!document.title.startsWith("✅")) document.title = originalTitle; }, 3000);
+            }
+        };
+
+        if (sendRemainingBtn) {
+            sendRemainingBtn.addEventListener('click', () => {
+                startBulkSend(
+                    sendRemainingBtn,
+                    "{{ url_for('follow_up_campaign_send_remaining_now') }}",
+                    'Are you sure you want to stop the scheduled campaign and send follow-ups to all remaining contacts immediately?'
+                );
+            });
+        }
+
+        if (openSendAllModalBtn) {
+            openSendAllModalBtn.addEventListener('click', () => {
+                startBulkSend(
+                    openSendAllModalBtn, "{{ url_for('send_manual_follow_ups') }}", 'Are you sure you want to send follow-ups to all pending contacts immediately? This will run in the background.', true
+                );
+            });
+        }
+    }
+
+    // Mono Mail AJAX Submission
+    const monoMailForm = document.getElementById('mono-mail-form');
+    if (monoMailForm) {
+        const monoMailLoader = document.getElementById('mono-mail-loader');
+        const spinner = monoMailLoader.querySelector('.mono-spinner-loader');
+        const successIcon = monoMailLoader.querySelector('.mono-mail-success-icon');
+        const statusText = monoMailLoader.querySelector('#mono-mail-status');
+
+        monoMailForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            monoMailForm.style.display = 'none';
+            statusText.textContent = 'Sending your follow-up...';
+            spinner.style.display = 'inline-block';
+            successIcon.style.display = 'none';
+            monoMailLoader.style.display = 'flex';
+
+            const formData = new FormData(monoMailForm);
+
+            fetch("{{ url_for('send_manual_follow_up_mono') }}", {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: formData
+            })
+            .then(response => response.ok ? response.json() : response.json().then(err => { throw new Error(err.error || 'Server error') }))
+            .then(data => {
+                if (data.success) {
+                    showFlashMessage(data.message, 'success');
+                    monoMailForm.reset();
+
+                    spinner.style.display = 'none';
+                    successIcon.style.display = 'inline-block';
+                    feather.replace();
+                    statusText.textContent = 'Follow-up Sent Successfully!';
+
+                    setTimeout(() => {
+                        monoMailLoader.style.display = 'none';
+                        monoMailForm.style.display = 'block';
+                    }, 2500);
+                } else { throw new Error(data.error || 'An unknown error occurred.'); }
+            })
+            .catch(error => {
+                showFlashMessage('Error sending mail: ' + error.message, 'danger');
+                monoMailLoader.style.display = 'none';
+                monoMailForm.style.display = 'block';
+            });
+        });
+    }
+});
+
+    // Follow-up dataset clear button behavior: show loader + 'Removing Dataset'
+    const followupClearBtn = document.getElementById('followup-clear-btn');
+    const clearFollowUpForm = document.getElementById('clear-follow-up-form');
+    if (followupClearBtn && clearFollowUpForm) {
+      followupClearBtn.addEventListener('click', function(e){
+        e.preventDefault();
+        if (!confirm('Are you sure you want to remove the current follow-up dataset and progress?')) return;
+        followupClearBtn.disabled = true;
+        followupClearBtn.classList.add('btn-removing');
+        followupClearBtn.innerHTML = '<span class="btn-loader"></span> Removing Dataset';
+        clearFollowUpForm.submit();
+      });
+    }
+</script>
+
+{% endblock %}

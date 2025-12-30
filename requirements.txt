@@ -1,0 +1,12 @@
+Flask
+Flask-SQLAlchemy
+SQLAlchemy
+pandas
+openpyxl
+python-dotenv
+msal
+APScheduler
+concurrent-log-handler
+requests
+httpx
+python-dateutil

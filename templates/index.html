@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+    <h1>Welcome to Your CRM</h1>
+    <p>A simple tool to automate your email campaigns.</p>
+    <p>Please <a href="{{ url_for('login') }}">log in</a> to continue.</p>
+{% endblock %}

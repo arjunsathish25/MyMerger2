@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Scheduler Status{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Scheduler Status</h2>
+    <div class="card mt-3">
+        <div class="card-header">
+            Job Details
+        </div>
+        <div class="card-body">
+            {% if status.error %}
+                <div class="alert alert-danger" role="alert">
+                    {{ status.error }}
+                </div>
+            {% else %}
+                <p><strong>Job ID:</strong> <code>{{ status.job_id }}</code></p>
+                <p><strong>Status:</strong>
+                    {% if status.is_running %}<span class="badge bg-success">Running</span>
+                    {% else %}<span class="badge bg-danger">Stopped</span>{% endif %}</p>
+                <p><strong>Next Scheduled Run:</strong> {{ status.next_run_time }}</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

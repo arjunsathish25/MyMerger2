@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Preview Email Template - My Merger{% endblock %}
+
+{% block content %}
+<section class="preview-section">
+  <div class="email-preview">
+    {{ preview_content|safe }}
+  </div>
+</section>
+{% endblock %}

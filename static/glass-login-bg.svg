@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#9d4edd;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#7209b7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3a0ca3;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background gradient -->
+  <rect width="1920" height="1080" fill="url(#bgGradient)"/>
+  
+  <!-- Stars -->
+  <circle cx="150" cy="80" r="2" fill="white" opacity="0.8"/>
+  <circle cx="280" cy="120" r="1.5" fill="white" opacity="0.6"/>
+  <circle cx="420" cy="100" r="2.5" fill="white" opacity="0.9"/>
+  <circle cx="580" cy="150" r="1" fill="white" opacity="0.7"/>
+  <circle cx="720" cy="90" r="2" fill="white" opacity="0.8"/>
+  <circle cx="880" cy="130" r="1.5" fill="white" opacity="0.6"/>
+  <circle cx="1020" cy="110" r="2" fill="white" opacity="0.9"/>
+  <circle cx="1180" cy="140" r="1.5" fill="white" opacity="0.7"/>
+  <circle cx="1320" cy="100" r="2.5" fill="white" opacity="0.8"/>
+  <circle cx="1480" cy="120" r="1" fill="white" opacity="0.6"/>
+  <circle cx="1640" cy="95" r="2" fill="white" opacity="0.9"/>
+  <circle cx="1800" cy="135" r="1.5" fill="white" opacity="0.7"/>
+  
+  <!-- Cross stars (larger sparkles) -->
+  <g fill="white" opacity="0.7">
+    <path d="M 100 150 L 105 155 L 100 160 L 95 155 Z" />
+    <path d="M 500 200 L 508 208 L 500 216 L 492 208 Z" />
+    <path d="M 900 180 L 905 185 L 900 190 L 895 185 Z" />
+    <path d="M 1300 160 L 1308 168 L 1300 176 L 1292 168 Z" />
+    <path d="M 1700 170 L 1707 177 L 1700 184 L 1693 177 Z" />
+  </g>
+  
+  <!-- Mountains (background layer) -->
+  <path d="M 0 400 Q 200 300 400 350 T 800 320 T 1200 380 T 1600 300 T 1920 400 L 1920 600 L 0 600 Z" fill="#5a189a" opacity="0.6"/>
+  
+  <!-- Mountains (middle layer) -->
+  <path d="M 0 500 Q 150 380 300 450 T 700 420 T 1100 480 T 1500 400 T 1920 520 L 1920 800 L 0 800 Z" fill="#3c096c" opacity="0.8"/>
+  
+  <!-- Pine trees (background) -->
+  <g fill="#240046" opacity="0.5">
+    <!-- Tree cluster left -->
+    <polygon points="100,500 85,550 115,550"/>
+    <polygon points="150,480 130,540 170,540"/>
+    <polygon points="180,510 160,560 200,560"/>
+    <polygon points="220,490 200,545 240,545"/>
+    <polygon points="260,520 240,570 280,570"/>
+  </g>
+  
+  <!-- Pine trees (foreground) -->
+  <g fill="#1a0033" opacity="0.9">
+    <!-- Left side trees -->
+    <polygon points="50,600 20,700 80,700"/>
+    <polygon points="120,580 85,700 155,700"/>
+    <polygon points="200,610 160,750 240,750"/>
+    <polygon points="280,590 240,730 320,730"/>
+    <polygon points="360,620 310,780 410,780"/>
+    
+    <!-- Center trees -->
+    <polygon points="600,630 550,800 650,800"/>
+    <polygon points="700,600 650,780 750,780"/>
+    <polygon points="800,640 750,820 850,820"/>
+    <polygon points="900,610 850,800 950,800"/>
+    <polygon points="1000,650 950,850 1050,850"/>
+    
+    <!-- Right side trees -->
+    <polygon points="1300,600 1250,780 1350,780"/>
+    <polygon points="1400,630 1350,820 1450,820"/>
+    <polygon points="1500,590 1450,750 1550,750"/>
+    <polygon points="1600,640 1550,830 1650,830"/>
+    <polygon points="1700,610 1650,800 1750,800"/>
+    <polygon points="1800,650 1750,860 1850,860"/>
+    <polygon points="1900,600 1850,760 1920,760"/>
+  </g>
+</svg>

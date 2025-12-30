@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Campaign Report - Mail Merger{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="report-container">
+        <div class="report-header">
+            <div>
+                <h1>Campaign Performance Report</h1>
+                <p>Generated on: {{ generation_date }}</p>
+            </div>
+            <button onclick="window.print()" class="btn-primary no-print"><i data-feather="printer"></i> Print Report</button>
+        </div>
+
+        <section class="report-section">
+            <h2>Overall Summary</h2>
+            <div class="stats-summary">
+                <div class="stat-item stat-total">
+                    <span><i data-feather="users"></i> Total Contacts</span>
+                    <strong>{{ stats.Total }}</strong>
+                </div>
+                <div class="stat-item stat-sent">
+                    <span><i data-feather="check-circle"></i> Sent</span>
+                    <strong>{{ stats.Sent }}</strong>
+                </div>
+                <div class="stat-item stat-replied">
+                    <span><i data-feather="inbox"></i> Replied</span>
+                    <strong>{{ stats.Replied }}</strong>
+                </div>
+                <div class="stat-item stat-failed">
+                    <span><i data-feather="x-circle"></i> Failed</span>
+                    <strong>{{ stats.Failed }}</strong>
+                </div>
+                <div class="stat-item stat-pending">
+                    <span><i data-feather="clock"></i> Pending</span>
+                    <strong>{{ stats.Pending }}</strong>
+                </div>
+            </div>
+        </section>
+
+        <section class="report-section">
+            <h2>Key Metrics</h2>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <h3>Reply Rate</h3>
+                    <div class="metric-value">{{ '%.2f'|format(metrics.reply_rate * 100) }}%</div>
+                    <p>({{ stats.Replied }} replies from {{ stats.Sent }} sent)</p>
+                </div>
+                <div class="metric-card">
+                    <h3>Failure Rate</h3>
+                    <div class="metric-value">{{ '%.2f'|format(metrics.failure_rate * 100) }}%</div>
+                    <p>({{ stats.Failed }} failures from {{ stats.Sent }} sent)</p>
+                </div>
+                <div class="metric-card">
+                    <h3>Completion</h3>
+                    <div class="metric-value">{{ '%.2f'|format(metrics.completion_rate * 100) }}%</div>
+                    <p>({{ stats.Sent + stats.Failed }} processed of {{ stats.Total }})</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="report-section">
+            <h2>Daily Activity (Last 7 Days)</h2>
+            <div class="chart-container" style="height: 300px;">
+                <canvas id="activityChart"></canvas>
+            </div>
+        </section>
+
+        <section class="report-section">
+            <h2>Contacts Who Replied</h2>
+            {% if replied_contacts %}
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Company</th>
+                            <th>Replied At</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for contact in replied_contacts %}
+                        <tr>
+                            <td>{{ contact.name }}</td>
+                            <td>{{ contact.email }}</td>
+                            <td>{{ contact.company_name }}</td>
+                            <td>{{ contact.reply_received_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No replies have been recorded for this campaign yet.</p>
+            {% endif %}
+        </section>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // This reuses the existing activity chart logic from the results page.
+    let activityChart = null;
+    const activityCtx = document.getElementById('activityChart');
+    if (!activityCtx) return;
+
+    fetch("{{ url_for('api_activity_over_time') }}")
+        .then(response => response.json())
+        .then(data => {
+            const isDark = document.body.classList.contains('dark');
+            const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+            const labelColor = isDark ? '#f1f1f5' : '#2e2e2e';
+
+            activityChart = new Chart(activityCtx.getContext('2d'), {
+                type: 'bar',
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: labelColor } } },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            ticks: { color: labelColor },
+                            grid: { display: false }
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            ticks: {
+                                color: labelColor,
+                                callback: function(value) { if (Number.isInteger(value)) { return value; } }
+                            },
+                            grid: { color: gridColor }
+                        }
+                    }
+                }
+            });
+        });
+});
+</script>
+{% endblock %}

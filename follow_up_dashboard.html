@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+{% block title %}Follow-up Dashboard - Mail Merger{% endblock %}
+{% block content %}
+
+<section class="status-card" style="max-width: 95vw; margin: 2rem auto;">
+  <h2>Follow-up Campaign</h2>
+  <p>Upload a list of contacts to send manual or scheduled follow-up emails. These emails will be sent as replies to existing conversations if found.</p>
+  
+  <div class="upload-controls" style="display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; flex-wrap: wrap; margin-top: 1.5rem;">
+    <form method="POST" enctype="multipart/form-data" action="{{ url_for('follow_up_dashboard') }}" id="upload-form" style="display: flex; align-items: center; gap: 1rem;">
+      <label class="custom-file-upload">
+        <input type="file" name="file" id="file-input" accept=".csv,.xlsx" required />
+        <i data-feather="file-plus"></i>
+        <span>Choose Follow-up File</span>
+      </label>
+      <span id="file-name">No file chosen</span>
+      <button type="submit" class="btn-primary" id="upload-btn">
+        <i data-feather="upload"></i> Upload
+      </button>
+    </form>
+    <form method="POST" action="{{ url_for('clear_follow_up_campaign') }}">
+        <button type="submit" class="btn-secondary btn-clear-all" onclick="return confirm('Are you sure you want to remove the current follow-up dataset and progress?');">
+            <i data-feather="trash-2"></i> Remove Dataset
+        </button>
+    </form>
+  </div>
+
+  {% if total_contacts > 0 %}
+  <div class="progress-bar-container" style="margin-top: 2rem;">
+    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+      <span>Progress</span>
+      <span>{{ processed_count }} / {{ total_contacts }}</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-bar-fill" style="width: {{ (processed_count / total_contacts * 100) if total_contacts > 0 else 0 }}%;"></div>
+    </div>
+    {% if campaign_completed %}
+      <p class="status-text-success" style="text-align: center; margin-top: 1rem;">Campaign Completed!</p>
+    {% endif %}
+  </div>
+  {% endif %}
+</section>
+
+<section class="mono-mail-section collapsible-section collapsed">
+  <div class="collapsible-header">
+    <div class="collapsible-title">
+      <h2>Mono Follow-up Mail</h2>
+      <p>Send a one-off follow-up email using the current follow-up template.</p>
+    </div>
+    <button type="button" class="collapsible-toggle" aria-label="Toggle Mono Mail section">
+      <i data-feather="chevron-up"></i>
+    </button>
+  </div>
+  <div class="collapsible-content">
+    <form method="POST" action="{{ url_for('send_manual_follow_up_mono') }}" id="followUpMonoMailForm">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="mono-name">Name</label>
+          <input type="text" id="mono-name" name="name" placeholder="e.g., Jane Doe" required>
+        </div>
+        <div class="form-group">
+          <label for="mono-company">Company Name</label>
+          <input type="text" id="mono-company" name="company_name" placeholder="e.g., Innovate Inc.">
+        </div>
+        <div class="form-group">
+          <label for="mono-email">Email ID</label>
+          <input type="email" id="mono-email" name="email_id" placeholder="e.g., jane.doe@innovate.com" required>
+        </div>
+      </div>
+      <button type="submit" class="btn-primary"><i data-feather="send"></i> Send Follow-up</button>
+      <!-- The loader container will be swapped with the form on submission -->
+      <div id="followUpMonoMailLoader" class="loader-con">
+        <div style="--i: 0;" class="pfile"></div>
+        <div style="--i: 1;" class="pfile"></div>
+        <div class="pfile" style="--i: 2;"></div>
+        <div class="pfile" style="--i: 3;"></div>
+        <div class="pfile" style="--i: 4;"></div>
+        <div class="pfile" style="--i: 5;"></div>
+      </div>
+    </form>
+  </div>
+</section>
+
+<section class="send-email-section">
+  <div class="campaign-controls">
+    {% if scheduler_status.state == 'running' %}
+      <div class="control-form-group">
+        <form method="POST" action="{{ url_for('stop_follow_up_campaign') }}" class="control-form">
+          <button type="submit" class="btn-warning" aria-label="Pause Follow-up Campaign">
+            <i data-feather="pause-circle"></i> Pause Scheduled Follow-ups
+          </button>
+        </form>
+      </div>
+      <p class="status-text">Scheduled follow-up campaign is running. Next email at: {{ scheduler_status.next_run }}</p>
+    {% elif scheduler_status.state == 'paused' %}
+      <div class="control-form-group" style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+        <form method="POST" action="{{ url_for('start_follow_up_campaign') }}" class="control-form">
+          <button type="submit" class="btn-success" aria-label="Start Scheduled Follow-up Campaign">
+            <i data-feather="play-circle"></i> Start Scheduled Follow-ups
+          </button>
+        </form>
+        <form method="POST" action="{{ url_for('send_manual_follow_ups') }}" id="send-all-form" class="control-form">
+          <button type="button" id="open-send-all-modal-btn" class="btn-primary"><i data-feather="zap"></i> Send All Immediately</button>
+        </form>
+      </div>
+      <p class="status-text">Choose how to send your follow-up emails.</p>
+    {% else %}
+      <p class="status-text-error">Follow-up scheduler job not found. Please check application logs.</p>
+    {% endif %}
+  </div>
+</section>
+
+<div class="contact-previews-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; max-width: 95vw; margin: 2rem auto;">
+  <section class="preview-section">
+    <h2>Pending Contacts ({{ pending_contacts|length }})</h2>
+    <div class="results-table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Index</th>
+            <th>Name</th>
+            <th>Email ID</th>
+            <th>Company Name</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for contact in pending_contacts %}
+          <tr>
+            <td>{{ contact.index }}</td>
+            <td>{{ contact.name }}</td>
+            <td>{{ contact.email_id }}</td>
+            <td>{{ contact.company_name }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4">No pending contacts.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="preview-section">
+    <h2>Processed Contacts ({{ processed_contacts|length }})</h2>
+    <div class="results-table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Index</th>
+            <th>Name</th>
+            <th>Email ID</th>
+            <th>Company Name</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for contact in processed_contacts %}
+          <tr>
+            <td>{{ contact.index }}</td>
+            <td>{{ contact.name }}</td>
+            <td>{{ contact.email_id }}</td>
+            <td>{{ contact.company_name }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4">No processed contacts yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<!-- Send All Immediately Modal -->
+<div id="send-all-modal" class="modal-overlay" style="display: none;">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3><i data-feather="zap"></i> Confirm Bulk Send</h3>
+      <button type="button" class="modal-close" aria-label="Close modal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p>Are you sure you want to send follow-up emails to <strong>all contacts</strong> in the list immediately?</p>
+      <p class="modal-warning-text">This will attempt to send all emails at once and cannot be paused or stopped once started.</p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-secondary modal-cancel">Cancel</button>
+      <button type="button" id="confirm-send-all-btn" class="btn-primary">Yes, Send All Now</button>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // File input name display
+    const fileInput = document.getElementById('file-input');
+    const fileName = document.getElementById('file-name');
+    if (fileInput && fileName) {
+      fileInput.addEventListener('change', () => {
+        fileName.textContent = fileInput.files.length ? fileInput.files[0].name : "No file chosen";
+      });
+    }
+
+    // Collapsible Section Logic
+    document.querySelectorAll('.collapsible-section').forEach(section => {
+        const header = section.querySelector('.collapsible-header');
+        header.addEventListener('click', () => {
+            section.classList.toggle('collapsed');
+        });
+    });
+
+    // Send All Modal Logic
+    const sendAllModal = document.getElementById('send-all-modal');
+    const openSendAllModalBtn = document.getElementById('open-send-all-modal-btn');
+
+    if (sendAllModal && openSendAllModalBtn) {
+      const closeSendAllModalBtns = sendAllModal.querySelectorAll('.modal-close, .modal-cancel');
+      const confirmSendAllBtn = document.getElementById('confirm-send-all-btn');
+      const sendAllForm = document.getElementById('send-all-form');
+
+      openSendAllModalBtn.addEventListener('click', () => {
+        sendAllModal.style.display = 'flex';
+        feather.replace();
+      });
+
+      closeSendAllModalBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          sendAllModal.style.display = 'none';
+        });
+      });
+
+      confirmSendAllBtn.addEventListener('click', () => {
+        confirmSendAllBtn.disabled = true;
+        confirmSendAllBtn.innerHTML = '<span class="spinner"></span> Sending...';
+        sendAllForm.submit();
+      });
+    }
+
+    // --- Handler for the Follow-up Dashboard Mono Mail ---
+    const followUpMonoMailForm = document.getElementById('followUpMonoMailForm');
+    if (followUpMonoMailForm) {
+        const followUpLoader = document.getElementById('followUpMonoMailLoader');
+        const followUpButton = followUpMonoMailForm.querySelector('button[type="submit"]');
+
+        followUpMonoMailForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            // Hide form, show loader, and disable button
+            followUpMonoMailForm.style.display = 'none';
+            followUpLoader.style.display = 'flex';
+            followUpButton.disabled = true;
+            followUpButton.innerHTML = '<i data-feather="loader" class="spinner"></i> Sending...';
+            feather.replace();
+
+            const formData = new FormData(followUpMonoMailForm);
+
+            fetch("{{ url_for('send_manual_follow_up_mono') }}", {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showFlashMessage(data.message, 'success');
+                    followUpMonoMailForm.reset();
+                } else {
+                    showFlashMessage(data.error || 'An unknown error occurred.', 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showFlashMessage('An unexpected network error occurred.', 'danger');
+            })
+            .finally(() => {
+                // Restore form and button
+                followUpLoader.style.display = 'none';
+                followUpMonoMailForm.style.display = 'block';
+                followUpButton.disabled = false;
+                followUpButton.innerHTML = '<i data-feather="send"></i> Send Follow-up';
+                feather.replace();
+            });
+        });
+    }
+});
+</script>
+
+{% endblock %}

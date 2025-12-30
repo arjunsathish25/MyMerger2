@@ -1,0 +1,104 @@
+{% macro mono_mail_card(form_action, button_text, card_title, card_subtitle) %}
+<div class="mono-mail-section spotlight-card">
+  <div class="collapsible-header" style="cursor: default;">
+    <div class="collapsible-title">
+      <h2>{{ card_title }}</h2>
+      <p>{{ card_subtitle }}</p>
+    </div>
+  </div>
+  <div class="collapsible-content" style="grid-template-rows: 1fr; opacity: 1; padding-top: 1.5rem; margin-top: 1.5rem; border-top: 1px solid var(--border-light);">
+    <form method="POST" action="{{ form_action }}" class="mono-mail-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="mono-name">Name</label>
+          <input type="text" id="mono-name" name="name" placeholder="e.g., Jane Doe" required>
+        </div>
+        <div class="form-group">
+          <label for="mono-company">Company Name</label>
+          <input type="text" id="mono-company" name="company_name" placeholder="e.g., Innovate Inc.">
+        </div>
+        <div class="form-group">
+          <label for="mono-email">Email ID</label>
+          <input type="email" id="mono-email" name="email_id" placeholder="e.g., jane.doe@innovate.com" required>
+        </div>
+      </div>
+      <button type="submit" class="btn-primary"><i data-feather="send"></i> {{ button_text }}</button>
+    </form>
+    <div class="mono-mail-loader" style="display: none; text-align: center; padding: 2rem 0; min-height: 258px; justify-content: center; align-items: center; flex-direction: column;">
+        <div class="mono-spinner-loader">
+            <svg class="spinner-ring" width="60" height="60">
+               <circle class="spinner-ring__circle" stroke-width="5" fill="transparent" r="27" cx="30" cy="30"/>
+            </svg>
+        </div>
+        <div class="mono-mail-success-icon" style="display: none;"><i data-feather="check-circle" style="width: 60px; height: 60px; color: var(--status-success);"></i></div>
+        <span class="mono-mail-status" style="display: block; margin-top: 1rem; font-size: 1rem; color: var(--text-muted);">Sending your email...</span>
+    </div>
+  </div>
+</div>
+{% endmacro %}
+
+{% macro bulk_send_progress_bar(container_id, title_text, done_button_id, status_text_id, counter_id, progress_bar_id) %}
+<div id="{{ container_id }}" class="progress-section" style="display: none; margin-top: 1.5rem; padding: 1.5rem; background-color: var(--bg-gray); border-radius: 12px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+      <h4 style="margin: 0;">{{ title_text }}</h4>
+      <button type="button" id="{{ done_button_id }}" class="btn-primary" style="display: none;">Done</button>
+    </div>
+    <div class="progress-bar-container">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+            <span id="{{ status_text_id }}">Initializing...</span>
+            <span id="{{ counter_id }}">0 / 0</span>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-bar-fill" id="{{ progress_bar_id }}" style="width: 0%;"></div>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro mono_mail_ajax_script(form_selector, url) %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const monoMailForm = document.querySelector("{{ form_selector }}");
+    if (monoMailForm) {
+        const container = monoMailForm.closest('.mono-mail-section');
+        const monoMailLoader = container.querySelector('.mono-mail-loader');
+        const spinner = monoMailLoader.querySelector('.mono-spinner-loader');
+        const successIcon = monoMailLoader.querySelector('.mono-mail-success-icon');
+        const statusText = monoMailLoader.querySelector('.mono-mail-status');
+
+        monoMailForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            monoMailForm.style.display = 'none';
+            statusText.textContent = 'Sending your email...';
+            spinner.style.display = 'inline-block';
+            successIcon.style.display = 'none';
+            monoMailLoader.style.display = 'flex';
+
+            const formData = new FormData(monoMailForm);
+
+            fetch("{{ url }}", { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: formData })
+            .then(response => response.ok ? response.json() : response.json().then(err => { throw new Error(err.error || 'Server error') }))
+            .then(data => {
+                if (data.success) {
+                    showFlashMessage(data.message, 'success');
+                    monoMailForm.reset();
+                    spinner.style.display = 'none';
+                    successIcon.style.display = 'inline-block';
+                    feather.replace();
+                    statusText.textContent = 'Email Sent Successfully!';
+                    setTimeout(() => {
+                        monoMailLoader.style.display = 'none';
+                        monoMailForm.style.display = 'block';
+                    }, 2500);
+                } else { throw new Error(data.error || 'An unknown error occurred.'); }
+            })
+            .catch(error => {
+                showFlashMessage('Error sending mail: ' + error.message, 'danger');
+                monoMailLoader.style.display = 'none';
+                monoMailForm.style.display = 'block';
+            });
+        });
+    }
+  });
+</script>
+{% endmacro %}

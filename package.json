@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@tailwindcss/vite": "^4.1.14",
+    "gsap": "^3.13.0",
+    "motion": "^12.23.22",
+    "tailwindcss": "^4.1.14"
+  }
+}

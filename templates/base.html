@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}Mail Merger{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='loader.css') }}">
+  <script src="https://unpkg.com/feather-icons"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='MagicBento/Bento.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/motion@10.17.0/dist/motion.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* --- Particle Background --- */
+    #particle-background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -10;
+      overflow: hidden;
+      /* The actual body background is now on this element */
+      background-color: #f5f7fa;
+      transition: background-color 0.3s ease;
+    }
+
+    /* (dashboard background overlay removed) */
+
+    body.dark #particle-background {
+      background-color: #111827;
+      /* A dark background color */
+    }
+
+    /* --- Region Selector --- */
+    .region-selector {
+      display: flex;
+      background-color: var(--bg-gray);
+      border-radius: 20px;
+      padding: 4px;
+      border: 1px solid var(--border-light);
+    }
+
+    body.dark .region-selector {
+      background-color: var(--input-bg-dark);
+      border-color: var(--border-dark);
+    }
+
+    .region-selector input[type="radio"] {
+      display: none;
+      /* Hide the actual radio button */
+    }
+
+    .region-selector .btn-region {
+      padding: 6px 16px;
+      cursor: pointer;
+      border-radius: 16px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      transition: all 0.2s ease-in-out;
+      white-space: nowrap;
+    }
+
+    .region-selector input[type="radio"]:checked+.btn-region {
+      background-color: var(--primary-orange);
+      color: white;
+      box-shadow: 0 2px 8px rgba(255, 98, 31, 0.3);
+    }
+  </style>
+</head>
+
+<body class="{% block body_class %}{% endblock %}">
+
+  {% if 'login-page' not in self.body_class() %}
+  <canvas id="particle-background"></canvas>
+  {% endif %}
+  <div id="page-loader">
+    <div class="loader-container">
+      {% include '_loader_scene.html' %}
+      </svg>
+    </div>
+  </div>
+
+  <header>
+    <div class="main-header">
+      <div class="logo-container">
+        <video src="{{ url_for('static', filename='day day day.mp4') }}" autoplay loop muted
+          class="header-logo logo-light"></video>
+        <video src="{{ url_for('static', filename='night night night.mp4') }}" autoplay loop muted
+          class="header-logo logo-dark"></video>
+        <!-- <div class="app-grid-icon"><i data-feather="grid"></i></div> -->
+        <!-- Brand Name removed by user request -->
+      </div>
+
+      <nav class="main-nav" aria-label="Main navigation">
+        <a href="{{ url_for('dashboard') }}" class="button" title="Dashboard"><i data-feather="home"></i><span
+            class="nav-text">Dashboard</span></a>
+        <a href="{{ url_for('follow_up_dashboard') }}" class="button" title="Follow-up Campaign"><i
+            data-feather="repeat"></i><span class="nav-text">Follow-up</span></a>
+        <a href="{{ url_for('history') }}" class="button" title="View History"><i data-feather="archive"></i><span
+            class="nav-text">History</span></a>
+        <a href="{{ url_for('results') }}" class="button" title="Email Results"><i data-feather="bar-chart-2"></i><span
+            class="nav-text">Results</span></a>
+        <a href="{{ url_for('inbox') }}" class="button" title="Inbox"><i data-feather="inbox"></i><span
+            class="nav-text">Inbox</span></a>
+        <a href="{{ url_for('template') }}" class="button" title="Edit Template"><i data-feather="edit-3"></i><span
+            class="nav-text">Template</span></a>
+      </nav>
+
+      <!-- Search Bar removed by user request -->
+
+      <div class="header-actions">
+        <a href="{{ url_for('logout') }}" class="button" title="Logout"><i data-feather="log-out"></i><span
+            class="nav-text">Logout</span></a>
+
+        <!-- BB8 Theme Toggle -->
+        <label class="bb8-toggle">
+          <input class="bb8-toggle__checkbox" type="checkbox" id="theme-toggle">
+          <div class="bb8-toggle__container">
+            <div class="bb8-toggle__scenery">
+              <div class="bb8-toggle__star"></div>
+              <div class="bb8-toggle__star"></div>
+              <div class="bb8-toggle__star"></div>
+              <div class="bb8-toggle__star"></div>
+              <div class="bb8-toggle__star"></div>
+              <div class="bb8-toggle__star"></div>
+              <div class="bb8-toggle__star"></div>
+              <div class="tatto-1"></div>
+              <div class="tatto-2"></div>
+              <div class="gomrassen"></div>
+              <div class="hermes"></div>
+              <div class="chenini"></div>
+              <div class="bb8-toggle__cloud"></div>
+              <div class="bb8-toggle__cloud"></div>
+              <div class="bb8-toggle__cloud"></div>
+            </div>
+            <div class="bb8">
+              <div class="bb8__head-container">
+                <div class="bb8__antenna"></div>
+                <div class="bb8__antenna"></div>
+                <div class="bb8__head"></div>
+              </div>
+              <div class="bb8__body"></div>
+            </div>
+            <div class="artificial__hidden">
+              <div class="bb8__shadow"></div>
+            </div>
+          </div>
+        </label>
+
+        <div class="user-profile">
+          <div class="avatar-circle">
+            <span>{{ session.get('username', 'U')[0] | upper }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Rail REMOVED by user request -->
+    <!-- 
+  <nav class="app-nav-rail"> ... </nav> 
+  -->
+  </header>
+
+  <!-- Container for all flash messages -->
+  <div id="flash-container" class="flash-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="flash {{ category }}" role="alert">
+      <span>{{ message }}</span>
+      <button class="flash-close" onclick="this.parentElement.remove();">&times;</button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+  </div>
+
+  <script>
+    // --- Dynamic Flash Message System ---
+    // This is defined here, before the content block, so it's available to all template scripts.
+    function showFlashMessage(message, category = 'info') {
+      const container = document.getElementById('flash-container');
+      if (!container) {
+        console.error('Flash container not found!');
+        return;
+      }
+
+      const flashDiv = document.createElement('div');
+      flashDiv.className = `flash ${category}`;
+      flashDiv.setAttribute('role', 'alert');
+
+      const messageSpan = document.createElement('span');
+      messageSpan.textContent = message;
+
+      const closeButton = document.createElement('button');
+      closeButton.className = 'flash-close';
+      closeButton.innerHTML = '&times;';
+      closeButton.onclick = () => { flashDiv.remove(); };
+
+      flashDiv.appendChild(messageSpan);
+      flashDiv.appendChild(closeButton);
+      container.appendChild(flashDiv);
+    }
+  </script>
+
+  <div class="page-content">
+    {% block content %}{% endblock %}
+  </div>
+
+  <script src="{{ url_for('static', filename='ClickSpark.js') }}"></script>
+  <script src="{{ url_for('static', filename='spotlight.js') }}"></script>
+  <script src="{{ url_for('static', filename='magic-bento-init.js') }}"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script>
+    // Initialize ClickSpark on the entire body for a global effect
+    document.addEventListener('DOMContentLoaded', () => {
+      const spark = new ClickSpark({
+        sparkCount: 15,
+        sparkRadius: 30,
+        duration: 600,
+        sparkSize: 8,
+      });
+
+      function updateSparkColor() {
+        // Get the computed value of the CSS variable, as canvas doesn't understand them
+        const orangeColor = getComputedStyle(document.documentElement).getPropertyValue('--primary-orange').trim();
+        // Set spark color to the resolved primary orange color, with a fallback
+        spark.sparkColor = orangeColor || '#ff621f';
+      }
+
+      // Set initial color and listen for theme changes
+      updateSparkColor();
+      document.addEventListener('themeChanged', updateSparkColor);
+    });
+
+    // --- Spotlight Effect Initialization ---
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.spotlight-card').forEach(card => {
+        new Spotlight(card);
+      });
+    });
+
+  </script>
+
+  <script>
+    // --- Particle Background Animation ---
+    document.addEventListener('DOMContentLoaded', () => {
+      const canvas = document.getElementById('particle-background');
+      // If the canvas doesn't exist (like on the login page), just exit.
+      if (!canvas) {
+        return;
+      }
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      let width = canvas.width = window.innerWidth;
+      let height = canvas.height = window.innerHeight;
+
+      const particleCount = 100;
+      const particles = [];
+      const lineDistance = 120; // Max distance for lines between particles
+      const mouseInteractionRadius = 150; // Radius for mouse to affect particles
+
+      let mouse = { x: null, y: null };
+
+      class Particle {
+        constructor() {
+          this.reset();
+        }
+
+        reset() {
+          this.x = Math.random() * width;
+          this.y = Math.random() * height;
+          const angle = Math.random() * 2 * Math.PI;
+          const speed = Math.random() * 0.5 + 0.2;
+          this.vx = Math.cos(angle) * speed;
+          this.vy = Math.sin(angle) * speed;
+          this.radius = Math.random() * 2 + 1;
+        }
+
+        update() {
+          // Move particle
+          this.x += this.vx;
+          this.y += this.vy;
+
+          // Boundary check (wrap around screen)
+          if (this.x < 0) this.x = width;
+          if (this.x > width) this.x = 0;
+          if (this.y < 0) this.y = height;
+          if (this.y > height) this.y = 0;
+        }
+
+        draw() {
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      function init() {
+        particles.length = 0; // Clear existing particles
+        for (let i = 0; i < particleCount; i++) {
+          particles.push(new Particle());
+        }
+      }
+
+      function drawLines() {
+        let allPoints = [...particles];
+        if (mouse.x !== null && mouse.y !== null) {
+          // Add mouse as a point to draw lines to
+          allPoints.push({ x: mouse.x, y: mouse.y, radius: 0 });
+        }
+
+        for (let i = 0; i < allPoints.length; i++) {
+          for (let j = i + 1; j < allPoints.length; j++) {
+            const dx = allPoints[i].x - allPoints[j].x;
+            const dy = allPoints[i].y - allPoints[j].y;
+            const distance = Math.hypot(dx, dy);
+
+            let maxDist = lineDistance;
+            // Use a larger radius for lines connecting to the mouse
+            if (allPoints[j].radius === 0) { // This is the mouse point
+              maxDist = mouseInteractionRadius;
+            }
+
+            if (distance < maxDist) {
+              ctx.beginPath();
+              ctx.moveTo(allPoints[i].x, allPoints[i].y);
+              ctx.lineTo(allPoints[j].x, allPoints[j].y);
+              // Fade lines with distance
+              ctx.globalAlpha = 1 - (distance / maxDist);
+              ctx.stroke();
+            }
+          }
+        }
+        ctx.globalAlpha = 1; // Reset alpha
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, width, height);
+
+        // Set colors based on theme
+        const isDark = document.body.classList.contains('dark');
+        ctx.fillStyle = isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.5)';
+        ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)';
+
+        for (const p of particles) {
+          p.update();
+          p.draw();
+        }
+
+        drawLines();
+
+        requestAnimationFrame(animate);
+      }
+
+      init();
+      animate();
+
+      document.addEventListener('mousemove', (e) => {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+      });
+
+      document.addEventListener('mouseleave', () => {
+        mouse.x = null;
+        mouse.y = null;
+      });
+
+      let resizeTimeout;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+          width = canvas.width = window.innerWidth;
+          height = canvas.height = window.innerHeight;
+          init();
+        }, 500);
+      });
+    });
+  </script>
+
+  <script>
+    // Immediately hide page loader if a flag is set from a previous action (e.g., file upload).
+    // This script runs before DOMContentLoaded to prevent the loader from flashing.
+    if (sessionStorage.getItem('skipLoader') === 'true') {
+      const loader = document.getElementById('page-loader');
+      if (loader) {
+        loader.style.display = 'none';
+      }
+      sessionStorage.removeItem('skipLoader'); // Clean up the flag
+    }
+
+    // This is for the region change, which does a full page reload.
+    // We check the session on the backend and pass a flag to skip the loader.
+    {% if session.skip_loader %}
+    const loader = document.getElementById('page-loader');
+    if (loader) {
+      loader.style.display = 'none';
+    }
+    sessionStorage.removeItem('skipLoader'); // Clean up the flag
+    {% endif %}
+  </script>
+
+  <script>
+    // Wrap in DOMContentLoaded to ensure all elements are available before scripts run.
+    // This prevents race conditions and ensures scripts don't block each other.
+    document.addEventListener('DOMContentLoaded', function () {
+      feather.replace();
+
+      const toggleCheckbox = document.getElementById('theme-toggle');
+      const htmlBody = document.body;
+      const savedTheme = localStorage.getItem('theme');
+
+      function applyTheme(dark) {
+        htmlBody.classList.toggle('dark', dark);
+        if (toggleCheckbox) {
+          toggleCheckbox.checked = dark;
+        }
+        feather.replace();
+        // Dispatch a custom event to notify components of the theme change
+        const event = new CustomEvent('themeChanged', { detail: { isDark: dark } });
+        document.dispatchEvent(event);
+      }
+
+      applyTheme(savedTheme === 'dark');
+
+      if (toggleCheckbox) {
+        // Handle change for checkbox element (BB8 Toggle)
+        toggleCheckbox.addEventListener('change', () => {
+          const isDark = toggleCheckbox.checked;
+          applyTheme(isDark);
+          localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        });
+      }
+    });
+
+    // The 'load' event fires after all resources (like images) are loaded.
+    // It's separate from DOMContentLoaded and is used here to hide the loader.
+    window.addEventListener('load', function () {
+      const loader = document.getElementById('page-loader');
+      // Only run the default fade-out if it's not already hidden by the script above.
+      if (loader && loader.style.display !== 'none') {
+        setTimeout(() => {
+          loader.classList.add('hidden'); // This class triggers the fade-out animation
+        }, 2500); // 2.5-second delay
+      }
+
+      // --- Interactive 3D Tilt for Login Card ---
+      const loginCard = document.querySelector('.login-card');
+      if (loginCard) {
+        const loginContainer = document.querySelector('.login-container');
+
+        loginContainer.addEventListener('mousemove', (e) => {
+          const rect = loginContainer.getBoundingClientRect();
+          const x = e.clientX - rect.left; // x position within the element.
+          const y = e.clientY - rect.top;  // y position within the element.
+
+          const centerX = rect.width / 2;
+          const centerY = rect.height / 2;
+
+          const rotateX = ((y - centerY) / centerY) * -5; // Max rotation of -5 to 5 degrees
+          const rotateY = ((x - centerX) / centerX) * 10;  // Max rotation of -10 to 10 degrees
+
+          loginCard.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        });
+
+        loginContainer.addEventListener('mouseleave', () => {
+          loginCard.style.transform = 'rotateX(0) rotateY(0)';
+        });
+      }
+    });
+  </script>
+
+  {% block page_scripts %}{% endblock %}
+
+</body>
+
+</html>

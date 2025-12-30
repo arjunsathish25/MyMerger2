@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Inbox - Mail Merger{% endblock %}
+
+{% block body_class %}inbox-page full-height-page{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='inbox_styles.css') }}">
+
+<div class="outlook-container">
+    <!-- 1. Folder Left Configuration -->
+    <div class="outlook-sidebar">
+        <!-- New Message Button -->
+        <button class="btn-new-mail" id="btn-compose-main">
+            <span class="icon-circle"><i data-feather="plus"></i></span>
+            <span class="btn-text">New mail</span>
+        </button>
+
+        <div class="folder-group">
+            <div class="folder-header" id="folder-favorites-toggle">Favorites</div>
+            <a href="#" class="folder-row active" data-folder="inbox">
+                <i data-feather="inbox"></i>
+                <!-- <span>Inbox</span> -->
+                <span class="folder-name">Inbox</span>
+                <span class="folder-count" id="inbox-count"></span>
+            </a>
+            <a href="#" class="folder-row" data-folder="sent">
+                <i data-feather="send"></i>
+                <!-- <span>Sent</span> -->
+                <span class="folder-name">Sent Items</span>
+            </a>
+            <a href="#" class="folder-row" data-folder="drafts">
+                <i data-feather="edit-2"></i>
+                <span class="folder-name">Drafts</span>
+            </a>
+        </div>
+
+        <div class="folder-group">
+            <div class="folder-header">Folders</div>
+            <a href="#" class="folder-row" data-folder="archive">
+                <i data-feather="archive"></i>
+                <!-- <span>Archived</span> -->
+                <span class="folder-name">Archive</span>
+            </a>
+            <a href="#" class="folder-row" data-folder="trash">
+                <i data-feather="trash-2"></i>
+                <!-- <span>Trash</span> -->
+                <span class="folder-name">Deleted Items</span>
+            </a>
+            <a href="#" class="folder-row" data-folder="junk">
+                <i data-feather="slash"></i>
+                <span class="folder-name">Junk Email</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- 2. Message List (Middle) -->
+    <div class="outlook-mail-list">
+        <div class="mail-list-header">
+            <div class="mail-list-tabs">
+                <button class="tab-btn active" data-filter="all">Focused</button>
+                <button class="tab-btn" data-filter="other">Other</button>
+            </div>
+            <!-- <div class="list-search-bar">
+                <input type="search" id="inbox-search" placeholder="Search mail...">
+                <i data-feather="search"></i>
+            </div> -->
+            <div class="mail-list-filter-actions">
+                <span class="filter-label">Filter</span>
+                <i data-feather="filter"></i>
+            </div>
+        </div>
+
+        <div class="mail-list-scroll-area" id="inbox-list">
+            <!-- Loader -->
+            <div class="outlook-loader">
+                <div class="spinner-circle"></div>
+            </div>
+        </div>
+        <nav class="pagination-nav" id="inbox-pagination"
+            style="padding: 8px; border-top: 1px solid var(--border-color);"></nav>
+    </div>
+
+    <!-- 3. Reading Pane (Right) -->
+    <div class="outlook-reading-pane" id="reading-pane">
+        <!-- Empty State -->
+        <div class="reading-empty-state" id="conversation-placeholder">
+            <img src="https://res-1.cdn.office.net/files/fabric-cdn-prod_20230815.002/assets/item-types/20/mail.svg"
+                alt="Select an item">
+            <h3>Select an item to read</h3>
+            <p>Click here to always read the first item in the list.</p>
+        </div>
+
+        <!-- Conversation Content -->
+        <div class="reading-content hidden" id="conversation-content-wrapper">
+            <div class="message-toolbar">
+                <div class="toolbar-actions">
+                    <button class="tool-btn" title="Reply" id="reply-btn"><i data-feather="corner-up-left"></i>
+                        Reply</button>
+                    <button class="tool-btn" title="Delete" id="delete-btn"><i data-feather="trash-2"></i>
+                        Delete</button>
+                    <button class="tool-btn" title="Archive" id="archive-btn"><i data-feather="archive"></i>
+                        Archive</button>
+                </div>
+            </div>
+
+            <div class="message-header-area">
+                <h2 class="message-subject" id="reading-subject">Subject Line Here</h2>
+                <div class="message-sender-row">
+                    <div class="sender-avatar-large" id="reading-avatar">AB</div>
+                    <div class="sender-info-col">
+                        <div class="sender-name" id="reading-sender-name">Sender Name</div>
+                        <div class="recipient-line">To: <span id="reading-to">You</span></div>
+                    </div>
+                    <div class="message-time" id="reading-time">Fri 10:30 AM</div>
+                </div>
+            </div>
+
+            <div class="message-body-scroll" id="conversation-view">
+                <!-- Emails go here -->
+            </div>
+
+            <!-- Reply Box Container -->
+            <div id="reply-box" class="reply-box" style="display:none;">
+                <div class="reply-header">
+                    <span>Replying to <b id="reply-to-name">...</b></span>
+                    <button class="btn btn-icon btn-sm" id="cancel-reply-btn"><i data-feather="x"></i></button>
+                </div>
+                <div class="reply-body">
+                    <div class="reply-avatar" id="reply-avatar">U</div>
+                    <textarea id="reply-editor" placeholder="Write a reply..."></textarea>
+                </div>
+                <div class="reply-footer">
+                    <button class="btn btn-primary" id="send-reply-btn">Send <i data-feather="send"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Compose Modal -->
+<div class="compose-modal-overlay" id="compose-modal">
+    <div class="compose-modal outlook-compose">
+        <div class="compose-header">
+            <h3>New Message</h3>
+            <div class="window-controls">
+                <button class="win-btn close" id="close-compose-btn"><i data-feather="x"></i></button>
+            </div>
+        </div>
+        <div class="compose-body">
+            <div class="input-line">
+                <button class="btn-to">To</button>
+                <input type="text" id="compose-to">
+            </div>
+            <div class="input-line">
+                <button class="btn-to">Cc</button>
+                <input type="text" id="compose-cc">
+            </div>
+            <div class="input-line subject-line">
+                <input type="text" id="compose-subject" placeholder="Add a subject">
+            </div>
+            <div class="editor-area">
+                <textarea id="compose-body" placeholder="Type / to insert files and more"></textarea>
+            </div>
+        </div>
+        <div class="compose-footer">
+            <button class="btn-primary" id="send-compose-btn">Send</button>
+            <button class="btn-icon"><i data-feather="paperclip"></i></button>
+            <button class="btn-icon"><i data-feather="image"></i></button>
+            <div class="spacer"></div>
+            <button class="btn-icon" id="discard-compose-btn"><i data-feather="trash-2"></i></button>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{{ url_for('static', filename='inbox.js') }}"></script>
+{% endblock %}

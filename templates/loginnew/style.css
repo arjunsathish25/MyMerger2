@@ -1,0 +1,284 @@
+/* Base Styles */
+body {
+    box-sizing: border-box;
+}
+
+/* Character animations */
+.character-eye {
+    transition: transform 0.1s ease-out;
+}
+
+.google-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.input-field:focus {
+    outline: none;
+    border-color: #1e40af;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.login-btn:hover {
+    background-color: #1e40af;
+    transform: translateY(-1px);
+}
+
+.microsoft-btn:hover {
+    background-color: #f8fafc;
+    transform: translateY(-1px);
+}
+
+.character-bounce {
+    animation: bounce 0.6s ease-in-out;
+}
+
+.character-wink .character-eye {
+    animation: wink 0.8s ease-in-out;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-15px) scale(1.1); }
+}
+
+@keyframes wink {
+    0%, 90%, 100% { transform: scaleY(1); }
+    45% { transform: scaleY(0.1); }
+}
+
+.character-happy {
+    animation: happy 1s ease-in-out;
+}
+
+@keyframes happy {
+    0%, 100% { transform: rotate(0deg) scale(1); }
+    25% { transform: rotate(-5deg) scale(1.05); }
+    75% { transform: rotate(5deg) scale(1.05); }
+}
+
+/* Character-specific mouth expressions */
+/* Orange character - wavy mouth */
+.orange-mouth-typing {
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    animation: orange-typing 0.6s ease-in-out infinite alternate;
+}
+
+.orange-mouth-password {
+    border-radius: 0% 100% 0% 100%;
+    animation: orange-password 1.2s ease-in-out infinite;
+}
+
+.orange-mouth-login {
+    border-radius: 50% 50% 50% 50% / 20% 20% 80% 80%;
+    animation: orange-login 0.8s ease-in-out;
+}
+
+.orange-mouth-microsoft {
+    border-radius: 100% 0% 100% 0%;
+    animation: orange-microsoft 1s ease-in-out;
+}
+
+/* Purple character - rectangular mouth */
+.purple-mouth-typing {
+    border-radius: 20%;
+    animation: purple-typing 0.4s ease-in-out infinite alternate;
+}
+
+.purple-mouth-password {
+    border-radius: 10px;
+    animation: purple-password 1s ease-in-out infinite;
+}
+
+.purple-mouth-login {
+    border-radius: 50% 50% 10% 10%;
+    animation: purple-login 0.9s ease-in-out;
+}
+
+.purple-mouth-microsoft {
+    border-radius: 10% 10% 50% 50%;
+    animation: purple-microsoft 1.1s ease-in-out;
+}
+
+/* Black character - square mouth */
+.black-mouth-typing {
+    border-radius: 0%;
+    animation: black-typing 0.5s ease-in-out infinite alternate;
+}
+
+.black-mouth-password {
+    border-radius: 0%;
+    animation: black-password 0.8s ease-in-out infinite;
+}
+
+.black-mouth-login {
+    border-radius: 0% 0% 50% 50%;
+    animation: black-login 0.7s ease-in-out;
+}
+
+.black-mouth-microsoft {
+    border-radius: 50% 50% 0% 0%;
+    animation: black-microsoft 1s ease-in-out;
+}
+
+/* Yellow character - blob mouth */
+.yellow-mouth-typing {
+    border-radius: 70% 30% 60% 40%;
+    animation: yellow-typing 0.7s ease-in-out infinite alternate;
+}
+
+.yellow-mouth-password {
+    border-radius: 30% 70% 40% 60%;
+    animation: yellow-password 1.3s ease-in-out infinite;
+}
+
+.yellow-mouth-login {
+    border-radius: 80% 20% 70% 30%;
+    animation: yellow-login 0.6s ease-in-out;
+}
+
+.yellow-mouth-microsoft {
+    border-radius: 20% 80% 30% 70%;
+    animation: yellow-microsoft 1.4s ease-in-out;
+}
+
+/* Keyframes for each character */
+@keyframes orange-typing {
+    0% { transform: scaleY(0.8) rotate(-5deg); }
+    100% { transform: scaleY(1.2) rotate(5deg); }
+}
+
+@keyframes orange-password {
+    0%, 100% { transform: scale(0.8) rotate(0deg); }
+    50% { transform: scale(0.5) rotate(360deg); }
+}
+
+@keyframes orange-login {
+    0% { transform: scaleY(1); }
+    50% { transform: scaleY(2) scaleX(1.2); }
+    100% { transform: scaleY(1); }
+}
+
+@keyframes orange-microsoft {
+    0%, 100% { transform: scaleX(1) rotate(0deg); }
+    50% { transform: scaleX(1.8) rotate(10deg); }
+}
+
+@keyframes purple-typing {
+    0% { transform: scaleX(0.9) skewX(-10deg); }
+    100% { transform: scaleX(1.1) skewX(10deg); }
+}
+
+@keyframes purple-password {
+    0%, 100% { transform: scale(0.7) rotateY(0deg); }
+    50% { transform: scale(0.4) rotateY(180deg); }
+}
+
+@keyframes purple-login {
+    0% { transform: scaleY(1); }
+    50% { transform: scaleY(2.5) scaleX(0.8); }
+    100% { transform: scaleY(1); }
+}
+
+@keyframes purple-microsoft {
+    0%, 100% { transform: scaleY(1); }
+    25% { transform: scaleY(1.5) scaleX(1.3); }
+    75% { transform: scaleY(0.5) scaleX(0.7); }
+}
+
+@keyframes black-typing {
+    0% { transform: scale(0.9) rotate(-2deg); }
+    100% { transform: scale(1.1) rotate(2deg); }
+}
+
+@keyframes black-password {
+    0%, 100% { transform: scale(0.8) rotateZ(0deg); }
+    50% { transform: scale(0.3) rotateZ(45deg); }
+}
+
+@keyframes black-login {
+    0% { transform: scaleY(1); }
+    50% { transform: scaleY(3) scaleX(0.6); }
+    100% { transform: scaleY(1); }
+}
+
+@keyframes black-microsoft {
+    0%, 100% { transform: scale(1); }
+    33% { transform: scale(1.4) rotate(15deg); }
+    66% { transform: scale(0.6) rotate(-15deg); }
+}
+
+@keyframes yellow-typing {
+    0% { transform: scaleY(0.7) skewY(-5deg); }
+    100% { transform: scaleY(1.3) skewY(5deg); }
+}
+
+@keyframes yellow-password {
+    0%, 100% { transform: scale(0.9) rotate(0deg) skewX(0deg); }
+    50% { transform: scale(0.4) rotate(180deg) skewX(20deg); }
+}
+
+@keyframes yellow-login {
+    0% { transform: scaleY(1); }
+    50% { transform: scaleY(2.2) scaleX(1.5) rotate(5deg); }
+    100% { transform: scaleY(1); }
+}
+
+@keyframes yellow-microsoft {
+    0%, 100% { transform: scale(1) skewX(0deg); }
+    25% { transform: scale(1.6) skewX(15deg); }
+    75% { transform: scale(0.8) skewX(-15deg); }
+}
+
+/* Eye expressions */
+.eyes-focused .character-eye {
+    animation: focused-eyes 2s ease-in-out infinite;
+}
+
+.eyes-worried .character-eye {
+    animation: worried-eyes 1.5s ease-in-out infinite;
+}
+
+.eyes-excited .character-eye {
+    animation: excited-eyes 0.8s ease-in-out;
+}
+
+@keyframes focused-eyes {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+}
+
+@keyframes worried-eyes {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-2px); }
+}
+
+@keyframes excited-eyes {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+}
+
+.character {
+    position: relative;
+}
+
+.float-animation {
+    animation: float 3s ease-in-out infinite;
+}
+
+.float-delay-1 {
+    animation-delay: -1s;
+}
+
+.float-delay-2 {
+    animation-delay: -2s;
+}
+
+.float-delay-3 {
+    animation-delay: -0.5s;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
